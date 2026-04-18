@@ -909,13 +909,15 @@ with col2:
                     st.write(f"✅ Pathogen Status: **{disease_name}**")
                 status.update(label=f"Step 2 Complete: {disease_name}", state="complete")
 
-            # 3. QUANTUM (Risk Level)
-            with st.status("⚛️ Step 3: Quantum Stability Analysis (Qiskit)...") as status:
+            # 3. QUANTUM (Risk Level) & ANALYTICS
+            with st.status("⚛️ Step 3: Quantum & Analytical Processing...") as status:
                 qc, entropy = build_quantum_circuit(active_img)
                 counts, backend_name = run_quantum(qc, backend_pref)
                 risk_score, risk_level = calculate_quantum_risk(counts, entropy)
                 leaf_health = 100 - risk_score
+                necrotic_ratio = compute_chlorophyll_degradation(active_img)
                 st.write(f"✅ Quantum Result: **{risk_level} Risk**")
+                st.write(f"✅ Physical Metrics: **{necrotic_ratio}% Cellular Depletion**")
                 status.update(label="Step 3 Complete", state="complete")
 
             # 4. PERENUAL (Care Guide)
@@ -935,7 +937,7 @@ with col2:
                 "variant": variant, "v_score": v_score,
                 "disease_name": disease_name, "d_conf": d_conf, "treatment": treatment,
                 "risk_score": risk_score, "risk_level": risk_level, "leaf_health": leaf_health,
-                "care_data": care_data
+                "care_data": care_data, "necrotic_ratio": necrotic_ratio
             }
             add_to_history(variant, disease_name, d_conf, "expert_pipeline", risk_score)
             
@@ -969,6 +971,7 @@ with col2:
             d_conf, care_data = report["d_conf"], report["care_data"]
             leaf_health, risk_score = report["leaf_health"], report["risk_score"]
             risk_level, treatment = report["risk_level"], report["treatment"]
+            necrotic_ratio = report["necrotic_ratio"]
 
             # --- 100,000x HOLOGRAPHIC DIAGNOSTIC HUD ---
             st.markdown("---")
@@ -1215,7 +1218,7 @@ with col2:
             with action_c2:
                 st.markdown("#### 📥 Document Export")
                 # PDF Download Feature
-                pdf_bytes = generate_pdf_report(variant, disease_name, d_conf, risk_level, treatment, risk_score, leaf_health, care_data)
+                pdf_bytes = generate_pdf_report(variant, disease_name, d_conf, risk_level, treatment, risk_score, leaf_health, care_data, necrotic_ratio)
                 st.download_button(
                     label="📄 Download Professional Diagnostic Report (PDF)",
                     data=pdf_bytes,
