@@ -14,6 +14,7 @@ import joblib
 import os
 import json
 import datetime
+import requests
 from dotenv import load_dotenv
 
 # Load environment variables at the very beginning
@@ -204,6 +205,8 @@ with st.sidebar:
     backend_pref = st.selectbox("Quantum Backend", ["Dynamic (Least Busy)", "Simulator Only"])
     run_quantum_always = st.toggle("Always Run Quantum", value=False,
         help="If OFF, quantum only runs when AI confidence < threshold (faster).")
+    camera_master_switch = st.toggle("Live Camera Active", value=True,
+        help="Turn OFF to disable camera access and save power/resources.")
 
     st.markdown("---")
     st.markdown("### 🌡️ Environmental Context")
@@ -369,7 +372,7 @@ with col1:
                 st.error("❌ Failed to decode image.")
                 st.stop()
             st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
-                     caption="📁 Uploaded Specimen", use_column_width=True)
+                     caption="📁 Uploaded Specimen", use_container_width=True)
 
     with tab_camera:
         st.markdown(
@@ -377,16 +380,19 @@ with col1:
             "position leaf in good light, then click <b>Take Photo</b>.</p>",
             unsafe_allow_html=True
         )
-        camera_file = st.camera_input("Capture leaf", label_visibility="collapsed")
-        if camera_file:
-            img = decode_image_source(camera_file, "camera")
-            input_source = "camera"
-            if img is None:
-                st.error("❌ Failed to capture image.")
-                st.stop()
-            st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
-                     caption="📷 Live Capture", use_column_width=True)
-            st.success("✅ Photo captured!")
+        if camera_master_switch:
+            camera_file = st.camera_input("Capture leaf", label_visibility="collapsed")
+            if camera_file:
+                img = decode_image_source(camera_file, "camera")
+                input_source = "camera"
+                if img is None:
+                    st.error("❌ Failed to capture image.")
+                    st.stop()
+                st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
+                         caption="📷 Live Capture", use_container_width=True)
+                st.success("✅ Photo captured!")
+        else:
+            st.warning("🔒 Camera is currently disabled. Turn on 'Live Camera Active' in the sidebar to use this feature.")
 
 # ---- ANALYSIS PANEL ----
 with col2:

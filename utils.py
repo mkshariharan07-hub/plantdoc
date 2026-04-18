@@ -14,6 +14,9 @@ RULE: Any change to extract_features() is made HERE only.
 import cv2
 import numpy as np
 import os
+import requests
+import json
+import base64
 from typing import Optional
 from dotenv import load_dotenv
 from qiskit import QuantumCircuit, transpile
