@@ -471,9 +471,9 @@ with col2:
                 risk_color = "#ef4444" if risk_level == "CRITICAL" else "#f59e0b" if risk_level == "MODERATE" else "#10b981"
                 st.markdown(f"<div class='metric-card'><h4>Risk Level</h4><h2 style='color:{risk_color};'>{risk_level}</h2></div>", unsafe_allow_html=True)
             
-            # Re-defining the columns better
+            # Re-defining the columns better for alignment
             st.markdown("---")
-            col_info1, col_info2 = st.columns(2)
+            col_info1, col_info2 = st.columns([1, 1], gap="medium")
             
             with col_info1:
                 st.markdown("#### 🏥 Remedial Action Plan")
@@ -505,17 +505,22 @@ with col2:
             with col_info2:
                 st.markdown("#### 🌿 Species & Care Intelligence")
                 if care_data:
-                    st.write(f"**Watering Needs:** {care_data['watering'].title()} 💧")
-                    st.write(f"**Sunlight Exposure:** {care_data['sunlight']} ☀️")
-                    st.write(f"**Growth Cycle:** {care_data['cycle']} 🔄")
-                    st.write(f"**Maintenance Level:** {care_data['care_level'].upper()} 🛠️")
+                    watering = str(care_data.get('watering', 'N/A')).title()
+                    sunlight = str(care_data.get('sunlight', 'N/A'))
+                    cycle = str(care_data.get('cycle', 'N/A')).title()
+                    care_level = str(care_data.get('care_level', 'N/A')).upper()
+                    
+                    st.write(f"**Watering Needs:** {watering} 💧")
+                    st.write(f"**Sunlight Exposure:** {sunlight} ☀️")
+                    st.write(f"**Growth Cycle:** {cycle} 🔄")
+                    st.write(f"**Maintenance Level:** {care_level} 🛠️")
                     with st.expander("📖 Botanical Description"):
-                        st.write(care_data['description'])
+                        st.write(str(care_data.get('description', 'No description available')))
                 else:
                     st.info("No botanical data found for this specific variant.")
                     
-                st.markdown("---")
-                st.markdown("##### ⚛️ Stability Analysis (Quantum)")
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("#### ⚛️ Stability Analysis (Quantum)")
                 st.caption("Determined via 4-qubit probability entanglement state.")
                 q_col1, q_col2 = st.columns(2)
                 with q_col1:
@@ -523,7 +528,21 @@ with col2:
                 with q_col2:
                     st.metric("Quantum Stability", f"{100 - risk_score}%")
 
-                st.markdown("---")
+            # Move Actions and PDF Download to a balanced full-width section
+            st.markdown("---")
+            action_c1, action_c2 = st.columns([1, 1], gap="medium")
+            
+            with action_c1:
+                # Expert Chat Invite
+                st.markdown("#### 💬 Talk to Virtual Pathologist")
+                with st.expander("Ask Dr. Leaf"):
+                    st.write("Our AI-driven pathologist 'Dr. Leaf' is available for deep-dive questions.")
+                    user_q = st.text_input("Ask a question about this diagnosis:")
+                    if user_q:
+                        st.info(f"Dr. Leaf says: For {disease_name}, ensure you rotate crops and check for {variant} core stability weekly.")
+            
+            with action_c2:
+                st.markdown("#### 📥 Document Export")
                 # PDF Download Feature
                 pdf_bytes = generate_pdf_report(variant, disease_name, d_conf, risk_level, treatment)
                 st.download_button(
@@ -533,13 +552,6 @@ with col2:
                     mime="application/pdf",
                     use_container_width=True
                 )
-                
-                # Expert Chat Invite
-                with st.expander("💬 Talk to a Virtual Plant Pathologist"):
-                    st.write("Our AI-driven pathologist 'Dr. Leaf' is available for deep-dive questions.")
-                    user_q = st.text_input("Ask a question about this diagnosis:")
-                    if user_q:
-                        st.info(f"Dr. Leaf says: For {disease_name}, ensure you rotate crops and check for {variant} core stability weekly.")
 
             add_to_history(variant, disease_name, d_conf, "expert_pipeline")
             st.balloons()
