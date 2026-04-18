@@ -59,78 +59,148 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@300;400;600;700;900&display=swap');
 
     html, body, [class*="css"] { font-family: 'Outfit', sans-serif; }
 
+    /* Animated Cinematic Background */
     .main { 
-        background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%); 
-        color: white; 
+        background: radial-gradient(circle at top right, #1a2935 0%, #0f172a 40%, #020617 100%); 
+        background-size: 200% 200%;
+        animation: gradientBG 15s ease infinite;
+        color: #e2e8f0; 
+    }
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
 
+    /* Ultra-Premium Super Buttons */
     .stButton>button {
-        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-        color: white; border: none; border-radius: 12px;
-        padding: 0.8rem 1.2rem; font-weight: 700;
+        background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+        color: white; border: none; border-radius: 16px;
+        padding: 0.8rem 1.5rem; font-weight: 800; font-size: 1.05rem;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        box-shadow: 0 10px 20px rgba(16,185,129,0.25);
-        letter-spacing: 0.5px;
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4), inset 0 2px 4px rgba(255,255,255,0.2);
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
     }
     .stButton>button:hover { 
-        transform: translateY(-4px) scale(1.02); 
-        box-shadow: 0 15px 30px rgba(16,185,129,0.4); 
+        transform: translateY(-5px) scale(1.03); 
+        box-shadow: 0 15px 35px rgba(16, 185, 129, 0.6), inset 0 2px 4px rgba(255,255,255,0.3); 
+        filter: brightness(1.1);
     }
+    .stButton>button:active { transform: translateY(0px) scale(0.98); }
 
+    /* Ultra Glassmorphism Metric Cards */
     .metric-card {
-        background: rgba(255,255,255,0.04);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 24px; padding: 2rem;
-        text-align: center; transition: all 0.3s ease;
-        box-shadow: 0 8px 32px 0 rgba(0,0,0,0.37);
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        border-left: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px; padding: 2rem;
+        text-align: center; 
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
+        position: relative;
+        overflow: hidden;
     }
+    .metric-card::before {
+        content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+        opacity: 0; transition: opacity 0.4s ease;
+        pointer-events: none;
+    }
+    .metric-card:hover::before { opacity: 1; }
     .metric-card:hover { 
-        transform: translateY(-5px); 
-        border-color: #10b981;
-        background: rgba(255,255,255,0.07);
+        transform: translateY(-8px); 
+        border-color: rgba(16, 185, 129, 0.5);
+        box-shadow: 0 15px 45px rgba(16, 185, 129, 0.25);
     }
+    .metric-card h4 { color: #94a3b8; font-weight: 600; letter-spacing: 2px; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .metric-card h2 { color: #f8fafc; font-weight: 900; font-size: 2.2rem; margin: 0; background: linear-gradient(90deg, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
+    /* Interactive Commerce Links */
     .purchase-button {
-        display: flex; align-items: center; justify-content: center;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 14px; padding: 12px 16px;
-        text-decoration: none; color: white !important;
-        font-weight: 600; font-size: 0.9rem;
-        margin-bottom: 10px; transition: all 0.3s ease;
+        display: flex; align-items: center; justify-content: flex-start; gap: 12px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px; padding: 14px 20px;
+        text-decoration: none; color: #f8fafc !important;
+        font-weight: 600; font-size: 0.95rem;
+        margin-bottom: 12px; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     .purchase-button:hover {
-        background: #10b981; border-color: #10b981;
-        transform: scale(1.02);
+        background: linear-gradient(135deg, rgba(16,185,129,0.9), rgba(5,150,105,0.9));
+        border-color: #34d399;
+        transform: scale(1.03) translateX(8px);
+        box-shadow: 0 10px 25px rgba(16,185,129,0.4);
     }
 
+    /* Badges with Neon Pulse Glow */
     .quantum-badge {
-        background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
-        color: white; padding: 6px 16px; border-radius: 50px;
-        font-size: 0.85rem; font-weight: 700;
-        box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+        background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+        color: white; padding: 6px 18px; border-radius: 50px;
+        font-size: 0.85rem; font-weight: 800;
+        box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);
+        text-transform: uppercase; letter-spacing: 1px;
+        display: inline-block; animation: pulseGlow 3s infinite alternate;
+        vertical-align: middle; margin-left: 10px;
+    }
+    @keyframes pulseGlow {
+        0% { box-shadow: 0 0 10px rgba(236,72,153,0.3); }
+        100% { box-shadow: 0 0 25px rgba(236,72,153,0.7); }
     }
 
     .action-step {
-        display: flex; align-items: flex-start; gap: 12px;
-        background: rgba(255,255,255,0.03);
-        padding: 12px; border-radius: 12px; margin-bottom: 8px;
+        display: flex; align-items: center; gap: 16px;
+        background: rgba(255,255,255,0.02);
+        padding: 16px; border-radius: 16px; margin-bottom: 12px;
+        border: 1px solid rgba(255,255,255,0.04);
+        transition: transform 0.3s ease, background 0.3s ease;
+        font-size: 1.05rem; font-weight: 400; color: #cbd5e1;
+    }
+    .action-step:hover {
+        transform: translateX(8px); background: rgba(255,255,255,0.06);
+        border-color: rgba(255,255,255,0.1);
     }
     .step-number {
-        background: #10b981; color: white;
-        width: 24px; height: 24px; border-radius: 50%;
+        background: linear-gradient(135deg, #10b981, #047857); color: white;
+        width: 32px; height: 32px; border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
-        font-size: 0.75rem; font-weight: 800; flex-shrink: 0;
+        font-size: 0.95rem; font-weight: 900; flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(16,185,129,0.4);
     }
+
+    /* Titles and Header enhancements */
+    h1, h2, h3, h4 { letter-spacing: -0.5px; }
+    h1 { font-family: 'Inter', sans-serif; font-size: 3.5rem !important; font-weight: 900 !important; margin-bottom: 0 !important; letter-spacing: -1.5px !important; }
+    
+    /* Input Elements inside Streamlit */
+    [data-testid="stCameraInput"] > div, [data-testid="stFileUploader"] > div {
+        border-radius: 20px; overflow: hidden;
+        border: 2px dashed rgba(99,102,241,0.5);
+        background: rgba(255,255,255,0.02);
+        transition: all 0.3s ease;
+    }
+    [data-testid="stCameraInput"] > div:hover, [data-testid="stFileUploader"] > div:hover {
+        border-color: rgba(16,185,129,0.8); background: rgba(16,185,129,0.05);
+    }
+
+    /* Progress and Status Tweaks */
+    [data-testid="stProgress"] > div > div { background: linear-gradient(90deg, #10b981, #34d399); }
+
+    /* Custom Scrollbar for a polished feel */
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 </style>
 """, unsafe_allow_html=True)
-
 # (Using DISEASE_INFO and extract_features from utils.py)
 
 
