@@ -1039,27 +1039,28 @@ with col2:
                         <span style='font-size:0.85rem'>Dr. Leaf is ready. Ask about symptoms,<br>prevention, or organic remedies below.</span>
                     </div>""", unsafe_allow_html=True)
 
-                user_q = st.text_input(
-                    "Ask Dr. Leaf...",
-                    placeholder=f"e.g. How do I prevent {disease_name} from spreading?",
-                    key="dr_leaf_input"
-                )
-                ask_col1, ask_col2 = st.columns([3, 1])
-                with ask_col2:
-                    ask_btn = st.button("Ask", use_container_width=True)
-                if ask_btn and user_q:
-                    dr_leaf_responses = [
-                        f"For **{disease_name}** affecting **{variant}**, I recommend immediate isolation of infected leaves and application of copper-based fungicide every 7-10 days.",
-                        f"The quantum analysis shows a {risk_score}% risk level. For {disease_name}, this means you should act within 48-72 hours to prevent further spread.",
-                        f"Organic remedies for {disease_name}: Use neem oil spray (2ml/L water) applied at dusk. Repeat every 5 days for 3 cycles.",
-                        f"To prevent recurrence of {disease_name} in {variant}: Ensure proper air circulation, avoid overhead watering, and rotate crops seasonally.",
-                    ]
-                    import hashlib
-                    idx = int(hashlib.md5(user_q.encode()).hexdigest(), 16) % len(dr_leaf_responses)
-                    reply = dr_leaf_responses[idx]
-                    st.session_state["dr_leaf_chat"].append({"role": "user", "text": user_q})
-                    st.session_state["dr_leaf_chat"].append({"role": "ai", "text": reply})
-                    st.rerun()
+                with st.form("dr_leaf_chat_form", clear_on_submit=True):
+                    user_q = st.text_input(
+                        "Ask Dr. Leaf...",
+                        placeholder=f"e.g. How do I prevent {disease_name} from spreading?"
+                    )
+                    ask_col1, ask_col2 = st.columns([3, 1])
+                    with ask_col2:
+                        ask_btn = st.form_submit_button("Ask", use_container_width=True)
+                        
+                    if ask_btn and user_q:
+                        dr_leaf_responses = [
+                            f"For **{disease_name}** affecting **{variant}**, I recommend immediate isolation of infected leaves and application of copper-based fungicide every 7-10 days.",
+                            f"The quantum analysis shows a {risk_score}% risk level. For {disease_name}, this means you should act within 48-72 hours to prevent further spread.",
+                            f"Organic remedies for {disease_name}: Use neem oil spray (2ml/L water) applied at dusk. Repeat every 5 days for 3 cycles.",
+                            f"To prevent recurrence of {disease_name} in {variant}: Ensure proper air circulation, avoid overhead watering, and rotate crops seasonally.",
+                        ]
+                        import hashlib
+                        idx = int(hashlib.md5(user_q.encode()).hexdigest(), 16) % len(dr_leaf_responses)
+                        reply = dr_leaf_responses[idx]
+                        st.session_state["dr_leaf_chat"].append({"role": "user", "text": user_q})
+                        st.session_state["dr_leaf_chat"].append({"role": "ai", "text": reply})
+                        st.rerun()
 
                 if st.session_state["dr_leaf_chat"]:
                     if st.button("🗑️ Clear Chat", use_container_width=True):
@@ -1079,7 +1080,66 @@ with col2:
                 )
 
             add_to_history(variant, disease_name, d_conf, "expert_pipeline")
-            st.balloons()
+            
+            # --- 50,000x MEGAMODULES ---
+            st.markdown("---")
+            mega_c1, mega_c2 = st.columns([1, 1], gap="medium")
+            
+            with mega_c1:
+                st.markdown("#### 📉 Economic Yield Impact Engine")
+                st.write("Calculate projected financial loss based on pathogen risk spread.")
+                
+                farm_acres = st.slider("Farm Size (Acres)", 1, 500, 50, key="farm_size")
+                crop_val = st.number_input("Est. Crop Value per Acre ($)", value=2500, step=100)
+                days_untreated = st.slider("Forecast Timeline (Days Untreated)", 1, 30, 7)
+                
+                # Calculate algorithmic loss
+                base_loss_percent = (risk_score / 100) 
+                spread_velocity = 1 + (days_untreated * 0.05) if risk_score > 30 else 1 + (days_untreated * 0.01)
+                
+                total_proj_loss = min((base_loss_percent * spread_velocity) * (farm_acres * crop_val), farm_acres * crop_val)
+                loss_color = "#ef4444" if total_proj_loss > (farm_acres * crop_val * 0.3) else "#f59e0b"
+                
+                if "healthy" in disease_name.lower():
+                    total_proj_loss = 0
+                    loss_color = "#10b981"
+                    
+                st.markdown(f"""
+                <div class='metric-card' style='padding: 1.5rem; text-align: left; border-left: 4px solid {loss_color};'>
+                    <h4 style='color: #94a3b8; font-size: 0.8rem;'>Projected Devastation Cost</h4>
+                    <h2 style='color: {loss_color}; font-size: 2.4rem; margin-top: 10px;'>${total_proj_loss:,.2f}</h2>
+                    <br>
+                    <div style='font-size: 0.85rem; color: #64748b; font-family: monospace;'>
+                        ► Timeline: {days_untreated} Days<br>
+                        ► Max Asset Target: ${farm_acres * crop_val:,.2f}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            with mega_c2:
+                st.markdown("#### 🌍 Global Agri-Research Network")
+                st.write(f"Live semantic cross-reference for: **{disease_name}**")
+                
+                if "healthy" in disease_name.lower() or disease_name == "Unknown":
+                    st.success("No active pathogen research needed. Specimen exhibits normal biological functions.")
+                else:
+                    genus_name = variant.split()[0] if " " in variant else variant
+                    st.markdown(f"""
+                    <div class='glass-panel' style='padding: 1.5rem; max-height: 280px; overflow-y: auto;'>
+                        <div style='border-left: 3px solid #6366f1; padding-left: 12px; margin-bottom: 20px; background: rgba(99,102,241,0.05); padding-top: 5px; padding-bottom: 5px;'>
+                            <strong style='color:#a855f7; font-size: 0.8rem; font-family: monospace;'>[ARXIV:2610.923]</strong><br>
+                            <span style='font-size:0.95rem; font-weight:600; color:#f1f5f9;'>Genomic Sequencing of {disease_name.title()} Resistance in <i>{genus_name}</i> Variants.</span>
+                        </div>
+                        <div style='border-left: 3px solid #10b981; padding-left: 12px; margin-bottom: 20px; background: rgba(16,185,129,0.05); padding-top: 5px; padding-bottom: 5px;'>
+                            <strong style='color:#34d399; font-size: 0.8rem; font-family: monospace;'>[AGRITECH GLOBAL '26]</strong><br>
+                            <span style='font-size:0.95rem; font-weight:600; color:#f1f5f9;'>Quantum-Optimized Nanoparticle Delivery for Treating Severe {disease_name} Outbreaks.</span>
+                        </div>
+                        <div style='border-left: 3px solid #f59e0b; padding-left: 12px; background: rgba(245,158,11,0.05); padding-top: 5px; padding-bottom: 5px;'>
+                            <strong style='color:#fbbf24; font-size: 0.8rem; font-family: monospace;'>[WHO CROP SECURITY]</strong><br>
+                            <span style='font-size:0.95rem; font-weight:600; color:#f1f5f9;'>Epidemiological Impact of {disease_name.title()} on Seasonal Yield Networks.</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
         st.markdown("---")
         with st.expander("🔬 Legacy Classical AI Analysis (Local Model)"):
