@@ -439,8 +439,6 @@ with col2:
 
         # ── 3. SAVE TO HISTORY & DOWNLOAD (Placeholder logic removed, handled inside pipeline blocks)
         st.info("💡 Run the **Hybrid Diagnostic Pipeline** above for full expert analysis and downloadable reports.")
-        </div>
-        """, unsafe_allow_html=True)
 
     else:
         # Clear stale cache when no image present
