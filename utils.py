@@ -15,8 +15,12 @@ import cv2
 import numpy as np
 import os
 from typing import Optional
+from dotenv import load_dotenv
 from qiskit import QuantumCircuit, transpile
 from qiskit_ibm_runtime import QiskitRuntimeService, Sampler
+
+# Load environment variables
+load_dotenv()
 
 # ── Artifact paths (one place to change if you move files) ────────────────────
 MODEL_PATH  = "plant_model.pkl"
@@ -392,12 +396,12 @@ def calculate_quantum_risk(counts: dict, entropy: float) -> tuple[float, str]:
     risk_score = (ones_ratio * 0.7 + entropy * 0.3) * 100
     risk_score = min(max(risk_score, 0), 100)
     
-    if risk_score > 70:
-        level = "CRITICAL"
-    elif risk_score > 40:
-        level = "MODERATE"
+    if risk_score > 75:
+        level = "CRITICAL (Immediate Action Required)"
+    elif risk_score > 45:
+        level = "MODERATE (Monitor Closely)"
     else:
-        level = "LOW"
+        level = "LOW (Healthy Growth)"
         
     return round(risk_score, 1), level
 
@@ -410,36 +414,52 @@ def identify_plant_plantnet(img_bgr: np.ndarray) -> dict:
     Call Pl@ntNet API for professional species identification.
     Requires PLANTNET_API_KEY in .env.
     """
-    import requests
-    import json
-
     api_key = os.getenv("PLANTNET_API_KEY", "")
     if not api_key:
         return {"error": "No PlantNet API key found in .env"}
 
+    # Resize for API to avoid payload limits (max 800px on longest side)
+    h, w = img_bgr.shape[:2]
+    max_dim = 800
+    if max(h, w) > max_dim:
+        scale = max_dim / max(h, w)
+        img_resized = cv2.resize(img_bgr, (int(w * scale), int(h * scale)))
+    else:
+        img_resized = img_bgr
+
     # Encode to JPEG
-    _, buf = cv2.imencode(".jpg", img_bgr)
+    _, buf = cv2.imencode(".jpg", img_resized)
     files = {"images": ("image.jpg", buf.tobytes())}
 
     url = f"https://my-api.plantnet.org/v2/identify/all?api-key={api_key}"
     
     try:
-        response = requests.post(url, files=files)
+        response = requests.post(url, files=files, timeout=15)
         response.raise_for_status()
         data = response.json()
         
         # Parse top result
         if data.get("results"):
             best = data["results"][0]
+            species = best.get("species", {})
+            common_names = species.get("commonNames", [])
+            
+            # Prefer common name, then scientific name
+            plant_name = common_names[0] if common_names else species.get("scientificName", "Unknown")
+            
             return {
-                "plant": best["species"]["commonNames"][0] if best["species"]["commonNames"] else best["species"]["scientificName"],
+                "plant": plant_name,
                 "score": round(best["score"] * 100, 1),
-                "scientific_name": best["species"]["scientificName"],
-                "family": best["species"]["family"]["scientificNameWithoutAuthor"],
+                "scientific_name": species.get("scientificName", "Unknown"),
+                "family": species.get("family", {}).get("scientificNameWithoutAuthor", "Unknown"),
             }
-        return {"error": "No plant identified by PlantNet."}
+        return {"error": "No plant identified by PlantNet. The image might not be a recognized plant."}
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            return {"error": "PlantNet API limit reached (429). Try again later."}
+        return {"error": f"PlantNet API status {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        return {"error": f"PlantNet API error: {str(e)}"}
+        return {"error": f"PlantNet connection error: {str(e)}"}
 
 
 def identify_crop_health(img_bgr: np.ndarray) -> dict:
@@ -447,63 +467,90 @@ def identify_crop_health(img_bgr: np.ndarray) -> dict:
     Call Kindwise Crop.Health API for advanced disease & pest diagnostics.
     Requires CROP_HEALTH_API_KEY in .env.
     """
-    import requests
-    import base64
-    import json
-
     api_key = os.getenv("CROP_HEALTH_API_KEY", "")
     if not api_key:
         return {"error": "No Crop.Health API key found in .env"}
 
+    # Resize for API (max 800px)
+    h, w = img_bgr.shape[:2]
+    max_dim = 800
+    if max(h, w) > max_dim:
+        scale = max_dim / max(h, w)
+        img_resized = cv2.resize(img_bgr, (int(w * scale), int(h * scale)))
+    else:
+        img_resized = img_bgr
+
     # Encode to JPEG and then Base64
-    _, buf = cv2.imencode(".jpg", img_bgr)
+    _, buf = cv2.imencode(".jpg", img_resized)
     img_base64 = base64.b64encode(buf.tobytes()).decode("ascii")
 
+    # Kindwise Crop.Health API v1 often expects details in query params or as specific flags
+    # We will try the query param approach which is common for their beta APIs
     url = "https://crop.kindwise.com/api/v1/identification"
+    params = {
+        "details": "taxonomy,description,treatment,common_names"
+    }
     headers = {
         "Api-Key": api_key,
         "Content-Type": "application/json"
     }
     payload = {
-        "images": [img_base64],
-        "details": "taxonomy,description,treatment,common_names"
+        "images": [img_base64]
     }
 
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        # Note: Using params=params to put details in the URL query string
+        response = requests.post(url, headers=headers, json=payload, params=params, timeout=20)
+        
+        if response.status_code != 200:
+            # Try a fallback without details if it fails
+            response = requests.post(url, headers=headers, json=payload, timeout=20)
+            
         response.raise_for_status()
         data = response.json()
 
-        # Parse result
+        # Parse result (Kindwise Crop.Health structure)
         result = data.get("result", {})
         crop_suggestions = result.get("crop", {}).get("suggestions", [])
         disease_suggestions = result.get("disease", {}).get("suggestions", [])
 
         if not crop_suggestions and not disease_suggestions:
-            return {"error": "No diagnosis from Crop.Health."}
+            return {"error": "No diagnosis from Crop.Health. The leaf might be unrecognised or image is unclear."}
 
         # Best crop and best disease
-        best_crop = crop_suggestions[0]["name"] if crop_suggestions else "Unknown"
-        best_disease = disease_suggestions[0]["name"] if disease_suggestions else "Healthy"
-        confidence = disease_suggestions[0]["probability"] * 100 if disease_suggestions else (crop_suggestions[0]["probability"] * 100 if crop_suggestions else 0)
-
-        # Get treatment if available
-        details = disease_suggestions[0].get("details", {}) if disease_suggestions else {}
-        treatment = details.get("treatment", {}).get("biological", []) + \
-                    details.get("treatment", {}).get("chemical", []) + \
-                    details.get("treatment", {}).get("prevention", [])
+        best_crop = crop_suggestions[0]["name"] if crop_suggestions else "Unknown Plant"
         
-        treatment_str = " | ".join(treatment[:3]) if treatment else "No specific treatment info found."
+        # If no disease suggestions, it's likely healthy
+        if not disease_suggestions:
+            disease_name = "Healthy"
+            confidence = crop_suggestions[0]["probability"] * 100 if crop_suggestions else 0
+            treatment_str = "No treatment needed. Maintain regular care."
+        else:
+            disease_name = disease_suggestions[0]["name"]
+            confidence = disease_suggestions[0]["probability"] * 100
+            
+            # Get treatment if available
+            details = disease_suggestions[0].get("details", {})
+            treatments = details.get("treatment", {})
+            
+            biological = treatments.get("biological", []) or []
+            chemical = treatments.get("chemical", []) or []
+            prevention = treatments.get("prevention", []) or []
+            
+            all_treatments = biological + chemical + prevention
+            treatment_str = " | ".join(all_treatments[:4]) if all_treatments else "No specific treatment info found."
 
         return {
             "plant": best_crop,
-            "disease": best_disease,
+            "disease": disease_name,
             "confidence": round(confidence, 1),
             "treatment": treatment_str,
-            "suggestions": disease_suggestions[:3]  # Return top 3 for UI
+            "suggestions": disease_suggestions[:3]
         }
+    except requests.exceptions.HTTPError as e:
+        return {"error": f"Crop.Health API status {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        return {"error": f"Crop.Health API error: {str(e)}"}
+        return {"error": f"Crop.Health connection error: {str(e)}"}
 
 
 def get_perenual_care_info(species_name: str) -> dict:
@@ -544,3 +591,91 @@ def get_perenual_care_info(species_name: str) -> dict:
         }
     except Exception as e:
         return {"error": f"Perenual API error: {str(e)}"}
+
+
+def get_remedy_purchase_links(disease_name: str) -> list[dict]:
+    """
+    Generate professional purchase links for pesticides/remedies 
+    based on the disease name.
+    """
+    if "healthy" in disease_name.lower():
+        return []
+        
+    # Standardize search query
+    query = f"{disease_name} treatment pesticide antifungal".replace(" ", "+")
+    
+    return [
+        {
+            "store": "Amazon",
+            "url": f"https://www.amazon.com/s?k={query}",
+            "icon": "📦"
+        },
+        {
+            "store": "Google Shopping",
+            "url": f"https://www.google.com/search?tbm=shop&q={query}",
+            "icon": "🛍️"
+        },
+        {
+            "store": "Generic Search",
+            "url": f"https://www.google.com/search?q={query}+professional+remedy",
+            "icon": "🔍"
+        }
+    ]
+
+
+def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level: str, treatment: str) -> bytes:
+    """
+    Generate a professional PDF report using fpdf2.
+    """
+    from fpdf import FPDF
+    import datetime
+
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Header
+    pdf.set_font("Arial", 'B', 24)
+    pdf.set_text_color(16, 185, 129) # Leaf green
+    pdf.cell(0, 20, "PlantPulse Diagnostic Report", ln=True, align='C')
+    
+    pdf.set_font("Arial", '', 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 10, f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Diagnosis Section
+    pdf.set_font("Arial", 'B', 16)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, "1. Executive Summary", ln=True)
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 8, f"Detected Variant: {plant}", ln=True)
+    pdf.cell(0, 8, f"Pathogen Status: {disease}", ln=True)
+    pdf.cell(0, 8, f"AI Confidence: {confidence}%", ln=True)
+    pdf.cell(0, 8, f"Quantum Risk Level: {risk_level}", ln=True)
+    pdf.ln(5)
+    
+    # Treatment Section
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "2. Treatment & Remedies", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.multi_cell(0, 8, treatment)
+    pdf.ln(5)
+    
+    # Disclaimer
+    pdf.set_font("Arial", 'I', 10)
+    pdf.set_text_color(150, 0, 0)
+    pdf.multi_cell(0, 6, "Disclaimer: This report is generated by a hybrid AI-Quantum system. "
+                        "Always consult with a local agronomist before applying chemical treatments.")
+    
+    return pdf.output()
+
+
+def simulate_environment() -> dict:
+    """Mock environmental sensor data based on random stability."""
+    import random
+    return {
+        "temp": round(random.uniform(22, 34), 1),
+        "humidity": round(random.uniform(40, 95), 1),
+        "soil_moisture": round(random.uniform(10, 80), 1),
+        "uv_index": round(random.uniform(1, 11), 1)
+    }

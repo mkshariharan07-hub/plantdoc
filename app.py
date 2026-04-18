@@ -11,9 +11,11 @@ import streamlit as st
 import cv2
 import numpy as np
 import joblib
-import os
-import json
 import datetime
+from dotenv import load_dotenv
+
+# Load environment variables at the very beginning
+load_dotenv()
 
 # Force UTF-8 encoding for standard output to avoid Windows console errors with emojis
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
@@ -35,6 +37,9 @@ from utils import (
     identify_crop_health,
     get_perenual_care_info,
     calculate_quantum_risk,
+    get_remedy_purchase_links,
+    generate_pdf_report,
+    simulate_environment,
     FEATURE_MODE_RAW, 
     FEATURE_MODE_HIST
 )
@@ -55,60 +60,70 @@ st.markdown("""
 
     html, body, [class*="css"] { font-family: 'Outfit', sans-serif; }
 
-    .main { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; }
+    .main { 
+        background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%); 
+        color: white; 
+    }
 
     .stButton>button {
         background: linear-gradient(90deg, #10b981 0%, #059669 100%);
         color: white; border: none; border-radius: 12px;
-        padding: 0.6rem 1.2rem; font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(16,185,129,0.3);
+        padding: 0.8rem 1.2rem; font-weight: 700;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 10px 20px rgba(16,185,129,0.25);
+        letter-spacing: 0.5px;
     }
-    .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.4); }
+    .stButton>button:hover { 
+        transform: translateY(-4px) scale(1.02); 
+        box-shadow: 0 15px 30px rgba(16,185,129,0.4); 
+    }
 
     .metric-card {
-        background: rgba(255,255,255,0.05);
-        backdrop-filter: blur(10px);
+        background: rgba(255,255,255,0.04);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 20px; padding: 1.5rem;
-        text-align: center; transition: transform 0.3s ease;
+        border-radius: 24px; padding: 2rem;
+        text-align: center; transition: all 0.3s ease;
+        box-shadow: 0 8px 32px 0 rgba(0,0,0,0.37);
     }
-    .metric-card:hover { transform: scale(1.02); border-color: #10b981; }
+    .metric-card:hover { 
+        transform: translateY(-5px); 
+        border-color: #10b981;
+        background: rgba(255,255,255,0.07);
+    }
+
+    .purchase-button {
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px; padding: 12px 16px;
+        text-decoration: none; color: white !important;
+        font-weight: 600; font-size: 0.9rem;
+        margin-bottom: 10px; transition: all 0.3s ease;
+    }
+    .purchase-button:hover {
+        background: #10b981; border-color: #10b981;
+        transform: scale(1.02);
+    }
 
     .quantum-badge {
         background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
-        color: white; padding: 4px 12px; border-radius: 50px;
-        font-size: 0.8rem; font-weight: 600;
+        color: white; padding: 6px 16px; border-radius: 50px;
+        font-size: 0.85rem; font-weight: 700;
+        box-shadow: 0 4px 12px rgba(99,102,241,0.3);
     }
 
-    .severity-high   { background:#ef4444; color:white; padding:4px 12px; border-radius:50px; font-weight:600; font-size:0.85rem; }
-    .severity-medium { background:#f59e0b; color:white; padding:4px 12px; border-radius:50px; font-weight:600; font-size:0.85rem; }
-    .severity-low    { background:#10b981; color:white; padding:4px 12px; border-radius:50px; font-weight:600; font-size:0.85rem; }
-
-    .history-card {
+    .action-step {
+        display: flex; align-items: flex-start; gap: 12px;
         background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.07);
-        border-radius: 12px; padding: 0.8rem 1rem;
-        margin-bottom: 8px; font-size: 0.85rem;
+        padding: 12px; border-radius: 12px; margin-bottom: 8px;
     }
-
-    /* Tab Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 12px; background: rgba(255,255,255,0.04);
-        border-radius: 14px; padding: 6px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 10px; padding: 8px 20px;
-        font-weight: 600; color: #94a3b8; background: transparent;
-    }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(90deg, #10b981, #059669) !important;
-        color: white !important;
-    }
-    [data-testid="stCameraInput"] > div {
-        border-radius: 16px; overflow: hidden;
-        border: 2px solid rgba(99,102,241,0.4);
-        box-shadow: 0 0 20px rgba(99,102,241,0.15);
+    .step-number {
+        background: #10b981; color: white;
+        width: 24px; height: 24px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; font-weight: 800; flex-shrink: 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -187,6 +202,17 @@ with st.sidebar:
     backend_pref = st.selectbox("Quantum Backend", ["Dynamic (Least Busy)", "Simulator Only"])
     run_quantum_always = st.toggle("Always Run Quantum", value=False,
         help="If OFF, quantum only runs when AI confidence < threshold (faster).")
+
+    st.markdown("---")
+    st.markdown("### 🌡️ Environmental Context")
+    env = simulate_environment()
+    ec1, ec2 = st.columns(2)
+    with ec1:
+        st.caption("Temp")
+        st.write(f"{env['temp']}°C")
+    with ec2:
+        st.caption("Humidity")
+        st.write(f"{env['humidity']}%")
 
     st.markdown("---")
     st.markdown("### 📋 Model Info")
@@ -305,6 +331,12 @@ with st.sidebar:
                 f"</div>",
                 unsafe_allow_html=True
             )
+        
+        if st.button("📥 Export History to CSV", use_container_width=True):
+            import pandas as pd
+            df = pd.DataFrame(history)
+            csv = df.to_csv(index=False).encode('utf-8')
+            st.download_button("Download CSV", data=csv, file_name="plant_diagnosis_history.csv", mime='text/csv')
     else:
         st.caption("No analyses yet this session.")
 
@@ -371,27 +403,27 @@ with col2:
             with st.status("🔍 Step 1: Identifying Plant Variant (PlantNet)...") as status:
                 p_res = identify_plant_plantnet(active_img)
                 if "error" in p_res:
-                    st.error(f"PlantNet: {p_res['error']}")
+                    st.error(f"⚠️ PlantNet Error: {p_res['error']}")
                     variant, v_score = "Unknown", 0
                 else:
                     variant = p_res['plant']
                     v_score = p_res['score']
                     st.write(f"✅ Detected Variant: **{variant}**")
-                status.update(label="Step 1 Complete", state="complete")
+                status.update(label=f"Step 1 Complete: {variant}", state="complete")
 
             # 2. CROP.HEALTH (Disease/Pathogen)
             with st.status("🩺 Step 2: Pathogen Status (Crop.Health)...") as status:
                 c_res = identify_crop_health(active_img)
                 if "error" in c_res:
-                    st.error(f"Crop.Health: {c_res['error']}")
+                    st.error(f"⚠️ Crop.Health Error: {c_res['error']}")
                     disease_name, d_conf = "Unknown", 0
-                    treatment = "No data available."
+                    treatment = "No data available. Check API key status or image quality."
                 else:
                     disease_name = c_res['disease']
                     d_conf = c_res['confidence']
                     treatment = c_res['treatment']
                     st.write(f"✅ Pathogen Status: **{disease_name}**")
-                status.update(label="Step 2 Complete", state="complete")
+                status.update(label=f"Step 2 Complete: {disease_name}", state="complete")
 
             # 3. QUANTUM (Risk Level)
             with st.status("⚛️ Step 3: Quantum Stability Analysis (Qiskit)...") as status:
@@ -436,28 +468,70 @@ with col2:
             col_info1, col_info2 = st.columns(2)
             
             with col_info1:
-                st.markdown("#### 🏥 Pathogen & Remedial Actions")
+                st.markdown("#### 🏥 Remedial Action Plan")
                 if "healthy" in disease_name.lower():
                     st.success("✅ **HEALTHY SPECIMEN**\n\nNo active pathogens detected. The structural integrity of the leaf is within normal parameters.")
+                    st.markdown("""
+                    <div class='action-step'><div class='step-number'>1</div>Maintain normal watering Schedule.</div>
+                    <div class='action-step'><div class='step-number'>2</div>Ensure adequate sunlight (4-6 hours).</div>
+                    <div class='action-step'><div class='step-number'>3</div>Monitor for seasonal pests.</div>
+                    """, unsafe_allow_html=True)
                 else:
                     st.error(f"⚠️ **PATHOGEN DETECTED: {disease_name.upper()}**")
-                    st.warning(f"**Recommended Remedies:**\n\n{treatment}")
+                    st.warning(f"**Field Treatment:**\n\n{treatment}")
                     
                     local_info = get_disease_info(disease_name)
                     if local_info["tips"] != FALLBACK_INFO["tips"]:
-                        st.info(f"💡 **AI Suggestion:** {local_info['tips']}")
+                        st.info(f"💡 **AI Expert Suggestion:** {local_info['tips']}")
+
+                    st.markdown("##### 🛒 Recommended Solutions & Pesticides")
+                    purchase_links = get_remedy_purchase_links(disease_name)
+                    for link in purchase_links:
+                        st.markdown(
+                            f"<a href='{link['url']}' target='_blank' class='purchase-button'>"
+                            f"{link['icon']} Buy {disease_name} Remedy on {link['store']}"
+                            f"</a>", 
+                            unsafe_allow_html=True
+                        )
 
             with col_info2:
-                st.markdown("#### 🌿 Maintenance & Care Guide")
+                st.markdown("#### 🌿 Species & Care Intelligence")
                 if care_data:
-                    st.write(f"**Watering:** {care_data['watering'].title()}")
-                    st.write(f"**Sunlight:** {care_data['sunlight']}")
-                    st.write(f"**Growth Cycle:** {care_data['cycle']}")
-                    st.write(f"**Care Level:** {care_data['care_level'].upper()}")
-                    with st.expander("📖 Species Description"):
+                    st.write(f"**Watering Needs:** {care_data['watering'].title()} 💧")
+                    st.write(f"**Sunlight Exposure:** {care_data['sunlight']} ☀️")
+                    st.write(f"**Growth Cycle:** {care_data['cycle']} 🔄")
+                    st.write(f"**Maintenance Level:** {care_data['care_level'].upper()} 🛠️")
+                    with st.expander("📖 Botanical Description"):
                         st.write(care_data['description'])
                 else:
-                    st.info("No extended care guide available for this variant.")
+                    st.info("No botanical data found for this specific variant.")
+                    
+                st.markdown("---")
+                st.markdown("##### ⚛️ Stability Analysis (Quantum)")
+                st.caption("Determined via 4-qubit probability entanglement state.")
+                q_col1, q_col2 = st.columns(2)
+                with q_col1:
+                    st.metric("Risk Score", f"{risk_score}%")
+                with q_col2:
+                    st.metric("Quantum Stability", f"{100 - risk_score}%")
+
+                st.markdown("---")
+                # PDF Download Feature
+                pdf_bytes = generate_pdf_report(variant, disease_name, d_conf, risk_level, treatment)
+                st.download_button(
+                    label="📄 Download Professional Diagnostic Report (PDF)",
+                    data=pdf_bytes,
+                    file_name=f"PlantPulse_Report_{variant}_{datetime.datetime.now().strftime('%Y%m%d')}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+                
+                # Expert Chat Invite
+                with st.expander("💬 Talk to a Virtual Plant Pathologist"):
+                    st.write("Our AI-driven pathologist 'Dr. Leaf' is available for deep-dive questions.")
+                    user_q = st.text_input("Ask a question about this diagnosis:")
+                    if user_q:
+                        st.info(f"Dr. Leaf says: For {disease_name}, ensure you rotate crops and check for {variant} core stability weekly.")
 
             add_to_history(variant, disease_name, d_conf, "expert_pipeline")
             st.balloons()
