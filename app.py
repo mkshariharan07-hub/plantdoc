@@ -380,7 +380,15 @@ with col2:
 
         st.progress(confidence / 100, text=f"AI Confidence: {confidence:.1f}%")
 
-        if confidence < confidence_threshold:
+        if confidence < 35:
+            st.warning(
+                f"⚠️ **Extremely Low Confidence ({confidence:.1f}%)**"
+            )
+            st.error(
+                "The AI is currently guessing. This usually happens if the model was trained on different scales. "
+                "**Please run `py main.py --fast` to synchronize your model.**"
+            )
+        elif confidence < confidence_threshold:
             st.warning(
                 f"⚠️ **Low Confidence ({confidence:.1f}%)** — result may be uncertain. "
                 "Ensure the leaf is well-lit, centered, and fills most of the frame."
