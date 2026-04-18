@@ -1234,7 +1234,7 @@ with col2:
             st.markdown("---")
             st.markdown("### 🎛️ Advanced Operations Dashboard")
             
-            tab_eco, tab_ops, tab_bio = st.tabs(["💰 Yield Economics & Intel", "🛰️ Tactical Operations", "🧬 Micro-Genomic Analysis"])
+            tab_eco, tab_ops, tab_bio, tab_matrix = st.tabs(["💰 Yield Economics & Intel", "🛰️ Tactical Operations", "🧬 Micro-Genomic Analysis", "🎛️ 50-Node Deep Matrix"])
             
             with tab_eco:
                 mega_c1, mega_c2 = st.columns([1, 1], gap="medium")
@@ -1389,6 +1389,45 @@ with col2:
                     st.plotly_chart(fig, use_container_width=True)
                 except Exception as e:
                     st.error(f"Topography matrix error: {e}")
+
+            with tab_matrix:
+                st.markdown("#### 🎛️ 50-Node Global Telemetry Array")
+                st.caption("Live simulated readout of 50 independent biometric and environmental sub-processors feeding the core Quantum Engine.")
+                import random
+                node_names = [
+                    "Photic Rad", "Stomatal H2O", "Soil pH", "Spore Dens", "N-Fixation", 
+                    "P-Decay", "K-Uptake", "Atmos-CO2", "Leaf Turgor", "Mycelial Net",
+                    "Root Depth", "Xylem Flow", "Phloem Visc", "UV-B Stress", "O3 Tox",
+                    "Humid Ratio", "Dew Point", "Thermal Cap", "Wind Shear", "Micro-Flora",
+                    "Salinity", "Iron Avail", "Mg Synthesis", "Zn Trace", "Cu Toxicity",
+                    "Boron Lvl", "Mn Factor", "Mo Trace", "Night Temp", "Day Dilation",
+                    "Fungal Res", "Bact Resist", "Viral Load", "Parasite %", "Nematode Den",
+                    "Albedo", "Canopy Cov", "Chlor Deg", "Necrotic Vel", "Respiration",
+                    "ATP Synth", "RuBisCO", "Transpirat", "Mesophyll", "Guard Cell",
+                    "Cuticle Tk", "Epidermis", "Vasc Bundle", "Path Vector", "Geo-Mag"
+                ]
+                
+                # Generate a 5-column grid for 50 items (10 rows)
+                matrix_cols = st.columns(5)
+                for i in range(50):
+                    # Calculate a random simulation value bounded by the actual quantum risk
+                    val_variance = random.uniform(0.5, 1.5)
+                    base_val = risk_score * val_variance if risk_score > 0 else random.uniform(1.0, 50.0)
+                    
+                    # Generate random metric changes
+                    delta_chg = round(random.uniform(-10.0, 10.0), 2)
+                    delta_str = f"{delta_chg}%"
+                    color_status = "normal" if delta_chg > 0 else "inverse"
+                    
+                    # Distribute across the 5 columns
+                    with matrix_cols[i % 5]:
+                        st.metric(
+                            label=f"N-{i+1:02d} {node_names[i]}",
+                            value=f"{round(base_val, 2)} U",
+                            delta=delta_str,
+                            delta_color=color_status
+                        )
+                st.markdown("<br><hr>", unsafe_allow_html=True)
 
             # --- J.A.R.V.I.S. AUDIO ENGINE ---
             import streamlit.components.v1 as components
