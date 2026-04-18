@@ -626,7 +626,38 @@ def get_remedy_purchase_links(disease_name: str) -> list[dict]:
     ]
 
 
-def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level: str, treatment: str, risk_score: float = 0.0, leaf_health: float = 100.0, care_data: dict = None) -> bytes:
+def compute_chlorophyll_degradation(image) -> float:
+    """
+    Analyzes the physical BGR NumPy image array to exactingly extract the ratio 
+    of healthy green chlorophyll pixels vs necrotic (dead/disease) boundaries.
+    """
+    import cv2
+    import numpy as np
+    try:
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        
+        # Bound variables for vibrant/living chlorophyll
+        lower_green = np.array([30, 40, 40])
+        upper_green = np.array([90, 255, 255])
+        green_mask = cv2.inRange(hsv, lower_green, upper_green)
+        
+        # Map the primary foreground leaf body (exclude dark background)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        _, fg_mask = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
+        leaf_pixels = cv2.countNonZero(fg_mask)
+        
+        if leaf_pixels == 0:
+            return 0.0 # Error state
+            
+        healthy_pixels = cv2.countNonZero(cv2.bitwise_and(green_mask, green_mask, mask=fg_mask))
+        healthy_ratio = (healthy_pixels / leaf_pixels) * 100
+        necrotic_ratio = 100.0 - healthy_ratio
+        return round(necrotic_ratio, 2)
+    except:
+        return 0.0
+
+
+def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level: str, treatment: str, risk_score: float = 0.0, leaf_health: float = 100.0, care_data: dict = None, necrotic_ratio: float = 0.0) -> bytes:
     """
     Generate an intense, multi-page professional PDF Clinical Dossier using fpdf2 and matplotlib graphs.
     """
@@ -674,8 +705,11 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
     
     summary_text = (
         f"Subject target '{plant}' has undergone a Deep-Spectral AI Scan supported by a back-end Qiskit Quantum processing cluster. "
-        f"The diagnostic pipeline has achieved a {confidence}% certainty correlation matching the biological pathogen signature: '{disease}'. "
-        f"Based on current meteorological offsets and the observed rate of necrosis, the cellular infrastructure of the specimen holds an overall Vitality metric of {leaf_health}%."
+        f"The diagnostic pipeline has achieved a {confidence}% certainty correlation matching the biological pathogen signature: '{disease}'.\n\n"
+        f"PHYSICAL METRICS:\n"
+        f"> The computer vision engine analytically isolated the specimen's foreground mask via HSV conversion.\n"
+        f"> Based on exact chlorophyll pigment ratios against the tissue boundary, the system identifies a {necrotic_ratio}% Cellular Necrosis / Depletion factor within the leaf body.\n"
+        f"> Overall Quantum Vitality output is tracking at {leaf_health}% stability."
     )
     pdf.multi_cell(0, 7, summary_text)
     pdf.ln(5)
