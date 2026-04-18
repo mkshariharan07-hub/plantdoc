@@ -1320,6 +1320,50 @@ with col2:
                         st.markdown(f"<div style='font-family: monospace; color: #f8fafc; background: #020617; padding: 10px; border-radius: 5px; word-wrap: break-word; letter-spacing: 2px;'>{dna_seq}</div>", unsafe_allow_html=True)
                         st.error(f"⚠️ GENETIC DEGRADATION: ~{mut_rate}% of base pairs compromised by {disease_name.split()[0]} pathogens.")
 
+                st.markdown("<br>##### 🌌 3D Holographic Topography Engine", unsafe_allow_html=True)
+                st.caption("Interactive topographical matrix representing tissue density across the Z-axis. Drag to rotate.")
+                import plotly.graph_objects as go
+                try:
+                    # Convert and downscale for high-performance 3D mapping
+                    scan_gray = cv2.cvtColor(active_img, cv2.COLOR_BGR2GRAY)
+                    scan_small = cv2.resize(scan_gray, (80, 80))
+                    
+                    # Create the 3D surface plot
+                    fig = go.Figure(data=[go.Surface(z=scan_small, colorscale='Viridis', showscale=False)])
+                    fig.update_layout(
+                        autosize=True,
+                        height=400,
+                        template='plotly_dark',
+                        margin=dict(l=0, r=0, b=0, t=0),
+                        scene=dict(
+                            xaxis=dict(showbackground=False, visible=False),
+                            yaxis=dict(showbackground=False, visible=False),
+                            zaxis=dict(showbackground=False, visible=False),
+                        )
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Topography matrix error: {e}")
+
+            # --- J.A.R.V.I.S. AUDIO ENGINE ---
+            import streamlit.components.v1 as components
+            clean_speech_variant = variant.replace("'", "").replace('"', '')
+            clean_speech_disease = disease_name.replace("'", "").replace('"', '')
+            audio_text = f"PlantPulse Intelligence complete. Specimen categorized as {clean_speech_variant}. Pathogen analysis identifies {clean_speech_disease}. Subatomic risk factor is {risk_level} at {risk_score} percent deviation."
+            
+            components.html(f"""
+                <script>
+                    if ('speechSynthesis' in window) {{
+                        let msg = new SpeechSynthesisUtterance("{audio_text}");
+                        msg.volume = 0.8;
+                        msg.rate = 0.95;
+                        msg.pitch = 0.9;
+                        msg.lang = 'en-US';
+                        window.speechSynthesis.speak(msg);
+                    }}
+                </script>
+            """, height=0, width=0)
+
         st.markdown("---")
         with st.expander("🔬 Legacy Classical AI Analysis (Local Model)"):
             # (Keep the existing classical logic here for reference)
