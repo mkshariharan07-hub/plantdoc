@@ -43,6 +43,7 @@ from utils import (
     get_remedy_purchase_links,
     generate_pdf_report,
     simulate_environment,
+    compute_chlorophyll_degradation,
     FEATURE_MODE_RAW, 
     FEATURE_MODE_HIST
 )
