@@ -426,10 +426,10 @@ with col2:
             with c1:
                 st.markdown(f"<div class='metric-card'><h4>Target Variant</h4><h2>{variant}</h2></div>", unsafe_allow_html=True)
             with c2:
-                # This is the "Hyptogen" (Pathogen) status the user mentioned
                 st.markdown(f"<div class='metric-card'><h4>Pathogen Status</h4><h2>{disease_name}</h2></div>", unsafe_allow_html=True)
-            with r3: # Wait, r3 was defined in previous block, I should use c3
-                pass
+            with c3:
+                risk_color = "#ef4444" if risk_level == "CRITICAL" else "#f59e0b" if risk_level == "MODERATE" else "#10b981"
+                st.markdown(f"<div class='metric-card'><h4>Risk Level</h4><h2 style='color:{risk_color};'>{risk_level}</h2></div>", unsafe_allow_html=True)
             
             # Re-defining the columns better
             st.markdown("---")
@@ -460,10 +460,6 @@ with col2:
                     st.info("No extended care guide available for this variant.")
 
             add_to_history(variant, disease_name, d_conf, "expert_pipeline")
-            st.balloons()
-
-            # Save to history
-            add_to_history(variant, disease_name, d_conf, "hybrid_pipeline")
             st.balloons()
 
         st.markdown("---")
