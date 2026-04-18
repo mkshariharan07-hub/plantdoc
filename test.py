@@ -158,7 +158,7 @@ else:
 # ── Test 7: Quantum Circuit ──────────────────────────────────────────────────
 print("\n[7] Quantum Integration")
 try:
-    from app import build_quantum_circuit
+    from utils import build_quantum_circuit
     qc, entropy = build_quantum_circuit(dummy_bgr)
     check("Quantum circuit builds", qc.num_qubits == 4)
     check("Entropy calculation works", 0.0 <= entropy <= 1.0, f"entropy={entropy:.3f}")
