@@ -14,8 +14,6 @@ import joblib
 import os
 import json
 import datetime
-from qiskit import QuantumCircuit, transpile
-from qiskit_ibm_runtime import QiskitRuntimeService, Sampler
 
 # Force UTF-8 encoding for standard output to avoid Windows console errors with emojis
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
@@ -23,11 +21,15 @@ if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
 
 # Shared utilities — single source of truth for features & prediction
 from utils import (
-    predict_image, get_disease_info,
-    get_feature_mode, load_model_and_scaler,
-    FEATURE_MODE_RAW, FEATURE_MODE_HIST,
-    decode_bytes_to_bgr, build_quantum_circuit,
-    run_quantum
+    predict_image, 
+    get_disease_info,
+    get_feature_mode, 
+    load_model_and_scaler,
+    decode_bytes_to_bgr, 
+    build_quantum_circuit,
+    run_quantum,
+    FEATURE_MODE_RAW, 
+    FEATURE_MODE_HIST
 )
 
 # ===============================
