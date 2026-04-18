@@ -418,7 +418,7 @@ with col2:
                 
                 # Check local knowledge base for additional tips
                 local_info = get_disease_info(disease_name)
-                if local_info["tips"] != _FALLBACK_INFO["tips"]:
+                if local_info["tips"] != FALLBACK_INFO["tips"]:
                     st.info(f"💡 **Additional AI Guidance:** {local_info['tips']}")
 
             # Save to history
