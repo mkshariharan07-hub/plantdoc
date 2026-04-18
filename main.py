@@ -30,7 +30,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 from dotenv import load_dotenv
 
-from utils import extract_features, MODEL_PATH, SCALER_PATH, REPORT_PATH, FEATURE_DIM
+from utils import extract_features_raw, MODEL_PATH, SCALER_PATH, REPORT_PATH, RAW_PIXEL_DIM
 
 load_dotenv()
 
@@ -47,9 +47,9 @@ def _safe_extract(img: np.ndarray) -> np.ndarray:
     try:
         # dataset is in RGB, but extract_features expects BGR
         img_bgr = cv2.cvtColor(img.astype("uint8"), cv2.COLOR_RGB2BGR)
-        return extract_features(img_bgr)
+        return extract_features_raw(img_bgr)
     except Exception:
-        return np.zeros(FEATURE_DIM)
+        return np.zeros(RAW_PIXEL_DIM)
 
 
 # ── Load Dataset ───────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ X = np.array(
 )
 y = labels
 print(f"   ✅ Done in {time.time()-t1:.1f}s | shape: {X.shape}")
-print(f"   ℹ️  Old model used {128*128*3} features — new uses {FEATURE_DIM} (better!)")
+print(f"   ℹ️  Training with {RAW_PIXEL_DIM} raw pixel features (High Detail).")
 
 # ── Fit & Save Scaler ─────────────────────────────────────────────────────────
 print(f"\n📐 Fitting StandardScaler...")
@@ -150,7 +150,7 @@ with open(REPORT_PATH, "w") as f:
     mode_str = "fast" if FAST_MODE else "full-gridsearch"
     f.write(f"PlantPulse Training Report\n{'='*55}\n")
     f.write(f"Mode          : {mode_str}\n")
-    f.write(f"Feature dims  : {FEATURE_DIM} (histogram-based)\n")
+    f.write(f"Feature dims  : {RAW_PIXEL_DIM} (raw pixels)\n")
     f.write(f"Test Accuracy : {test_acc*100:.2f}%\n\n")
     f.write(report)
 

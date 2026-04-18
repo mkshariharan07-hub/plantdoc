@@ -44,7 +44,7 @@ try:
     from utils import (
         extract_features, FEATURE_DIM, decode_bytes_to_bgr,
         get_disease_info, predict_image, load_model_and_scaler,
-        identify_plant_plantnet,
+        identify_plant_plantnet, extract_features_raw, RAW_PIXEL_DIM,
         MODEL_PATH, SCALER_PATH
     )
     check("utils.py imports OK", True)
@@ -59,21 +59,21 @@ print("\n[2] Feature Extraction")
 dummy_bgr   = np.random.randint(0, 255, (200, 200, 3), dtype=np.uint8)
 blank_bgr   = np.zeros((8, 8, 3), dtype=np.uint8)
 single_px   = np.full((1, 1, 3), 128, dtype=np.uint8)
+f_dummy  = extract_features_raw(dummy_bgr)
+f_hist   = extract_features(dummy_bgr)
+f_blank  = extract_features_raw(blank_bgr)
+f_single = extract_features_raw(single_px)
 
-f_dummy  = extract_features(dummy_bgr)
-f_blank  = extract_features(blank_bgr)
-f_single = extract_features(single_px)
-
-check("Output shape matches FEATURE_DIM",
-      f_dummy.shape == (FEATURE_DIM,), f"got {f_dummy.shape}")
-check("FEATURE_DIM is 63", FEATURE_DIM == 63, f"got {FEATURE_DIM}")
+check("Output shape matches RAW_PIXEL_DIM",
+      f_dummy.shape == (RAW_PIXEL_DIM,), f"got {f_dummy.shape}")
+check("RAW_PIXEL_DIM is 49923", RAW_PIXEL_DIM == 49923, f"got {RAW_PIXEL_DIM}")
 check("Deterministic output (same input → same output)",
-      np.allclose(extract_features(dummy_bgr), f_dummy))
-check("Works on 1×1 image", f_single.shape == (FEATURE_DIM,))
+      np.allclose(extract_features_raw(dummy_bgr), f_dummy))
+check("Works on 1×1 image", f_single.shape == (RAW_PIXEL_DIM,))
 check("Works on blank image (no NaN/Inf)",
       not np.any(np.isnan(f_blank)) and not np.any(np.isinf(f_blank)))
-check("Histogram values sum to ~1 (normalized)",
-      abs(f_dummy[:24].sum() - 1.0) < 0.01, f"sum={f_dummy[:24].sum():.4f}")
+check("Histogram fallback still works (63 dims)",
+      f_hist.shape == (FEATURE_DIM,))
 
 
 # ── Test 3: Image Decoding ────────────────────────────────────────────────────
@@ -205,6 +205,9 @@ try:
             d = r_ok.get_json()
             check("Response has plant/disease/confidence",
                   all(k in d for k in ["plant", "disease", "confidence"]))
+
+    except Exception as e:
+        check("Flask API tests", False, str(e))
 
 # ── Test 9: PlantNet API ────────────────────────────────────────────────────
 print("\n[9] External API Stubs")

@@ -22,12 +22,12 @@ from qiskit_ibm_runtime import QiskitRuntimeService, Sampler
 MODEL_PATH  = "plant_model.pkl"
 SCALER_PATH = "plant_scaler.pkl"
 REPORT_PATH = "training_report.txt"
-IMG_SIZE    = (128, 128)
+IMG_SIZE    = (129, 129)
 
 # Feature-space identifiers
-FEATURE_MODE_RAW  = "raw_pixels"    # old model: 128×128×3 = 49152 dims
-FEATURE_MODE_HIST = "histogram"     # new model: 63 dims
-RAW_PIXEL_DIM     = 128 * 128 * 3  # = 49152
+FEATURE_MODE_RAW  = "raw_pixels"    # 129×129×3 = 49923 dims
+FEATURE_MODE_HIST = "histogram"     # 63 dims
+RAW_PIXEL_DIM     = 129 * 129 * 3  # = 49923
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -101,12 +101,11 @@ def get_feature_mode(model) -> str:
 def extract_for_model(img: np.ndarray, model) -> np.ndarray:
     """
     Extract features in whichever space the model was trained in.
-    Removes the need for callers to know which mode is active.
     """
     mode = get_feature_mode(model)
-    if mode == FEATURE_MODE_RAW:
-        return extract_features_raw(img).reshape(1, -1)
-    return extract_features(img).reshape(1, -1)
+    if mode == FEATURE_MODE_HIST:
+        return extract_features(img).reshape(1, -1)
+    return extract_features_raw(img).reshape(1, -1)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -262,8 +261,8 @@ def predict_image(img_bgr: np.ndarray, model, scaler=None) -> dict:
         severity, tips, color, emoji, feature_mode
     """
     # ── Auto-detect feature space ────────────────────────────────────────────
-    mode     = get_feature_mode(model)   # raises ValueError on unknown dim
-    features = extract_for_model(img_bgr, model)  # shape (1, n_features)
+    mode     = get_feature_mode(model)
+    features = extract_for_model(img_bgr, model)
 
     # Scaler only applies to histogram-trained models (raw-pixel models
     # have no associated scaler in the old pipeline)
@@ -375,6 +374,32 @@ def run_quantum(qc: QuantumCircuit, backend_pref: str = "Simulator Only"):
         else:
             counts = result[0].data.c.get_counts()
         return counts, "local-simulator"
+        
+
+def calculate_quantum_risk(counts: dict, entropy: float) -> tuple[float, str]:
+    """
+    Translates quantum bit-states and image entropy into a 'Risk Level'.
+    Logic: 
+      - ones_ratio (majority of 1s) suggests high instability/disease signal.
+      - entropy adds weight to the complexity of the degradation.
+      - Score 0-100: Higher is riskier.
+    """
+    dominant_state = max(counts, key=counts.get)
+    # ones_ratio: bits with value '1' (out of 4 bits)
+    ones_ratio = dominant_state.count("1") / len(dominant_state)
+    
+    # Risk Score logic: (ones_ratio * 0.7 + entropy * 0.3) * 100
+    risk_score = (ones_ratio * 0.7 + entropy * 0.3) * 100
+    risk_score = min(max(risk_score, 0), 100)
+    
+    if risk_score > 70:
+        level = "CRITICAL"
+    elif risk_score > 40:
+        level = "MODERATE"
+    else:
+        level = "LOW"
+        
+    return round(risk_score, 1), level
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -415,3 +440,67 @@ def identify_plant_plantnet(img_bgr: np.ndarray) -> dict:
         return {"error": "No plant identified by PlantNet."}
     except Exception as e:
         return {"error": f"PlantNet API error: {str(e)}"}
+
+
+def identify_crop_health(img_bgr: np.ndarray) -> dict:
+    """
+    Call Kindwise Crop.Health API for advanced disease & pest diagnostics.
+    Requires CROP_HEALTH_API_KEY in .env.
+    """
+    import requests
+    import base64
+    import json
+
+    api_key = os.getenv("CROP_HEALTH_API_KEY", "")
+    if not api_key:
+        return {"error": "No Crop.Health API key found in .env"}
+
+    # Encode to JPEG and then Base64
+    _, buf = cv2.imencode(".jpg", img_bgr)
+    img_base64 = base64.b64encode(buf.tobytes()).decode("ascii")
+
+    url = "https://crop.kindwise.com/api/v1/identification"
+    headers = {
+        "Api-Key": api_key,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "images": [img_base64],
+        "details": "taxonomy,description,treatment,common_names"
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+
+        # Parse result
+        result = data.get("result", {})
+        crop_suggestions = result.get("crop", {}).get("suggestions", [])
+        disease_suggestions = result.get("disease", {}).get("suggestions", [])
+
+        if not crop_suggestions and not disease_suggestions:
+            return {"error": "No diagnosis from Crop.Health."}
+
+        # Best crop and best disease
+        best_crop = crop_suggestions[0]["name"] if crop_suggestions else "Unknown"
+        best_disease = disease_suggestions[0]["name"] if disease_suggestions else "Healthy"
+        confidence = disease_suggestions[0]["probability"] * 100 if disease_suggestions else (crop_suggestions[0]["probability"] * 100 if crop_suggestions else 0)
+
+        # Get treatment if available
+        details = disease_suggestions[0].get("details", {}) if disease_suggestions else {}
+        treatment = details.get("treatment", {}).get("biological", []) + \
+                    details.get("treatment", {}).get("chemical", []) + \
+                    details.get("treatment", {}).get("prevention", [])
+        
+        treatment_str = " | ".join(treatment[:3]) if treatment else "No specific treatment info found."
+
+        return {
+            "plant": best_crop,
+            "disease": best_disease,
+            "confidence": round(confidence, 1),
+            "treatment": treatment_str,
+            "suggestions": disease_suggestions[:3]  # Return top 3 for UI
+        }
+    except Exception as e:
+        return {"error": f"Crop.Health API error: {str(e)}"}
