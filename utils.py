@@ -36,40 +36,28 @@ RAW_PIXEL_DIM     = 128 * 128 * 3  # = 49152
 def extract_features(img: np.ndarray) -> np.ndarray:
     """
     Deterministic, normalized feature vector (63 dims).
-
-    Feature layout:
-      [0:24]  — Hue histogram, 24 bins, normalized to sum=1
-      [24:40] — Saturation histogram, 16 bins, normalized
-      [40:56] — Value histogram, 16 bins, normalized
-      [56:59] — BGR channel means  (divided by 255)
-      [59:62] — BGR channel stds   (divided by 255)
-      [62]    — Canny edge density (0–1)
-
-    Args:
-        img: BGR image as uint8 numpy array (any size).
-    Returns:
-        1-D float64 array of length 63.
+    Improved to be more robust to lighting and scale.
     """
-    # Fix distribution shift: dataset was 8x8, bottleneck all inputs to match!
-    img   = cv2.resize(img, (8, 8))
-    img   = cv2.resize(img, IMG_SIZE)
-    hsv   = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    # 1. Resize once to standard 128x128
+    img_std = cv2.resize(img, IMG_SIZE)
+    hsv     = cv2.cvtColor(img_std, cv2.COLOR_BGR2HSV)
 
-    # Color histograms — normalized to unit sum
+    # 2. Color histograms — normalized to sum to 1
     h_hist = cv2.calcHist([hsv], [0], None, [24], [0, 180]).flatten()
     s_hist = cv2.calcHist([hsv], [1], None, [16], [0, 256]).flatten()
     v_hist = cv2.calcHist([hsv], [2], None, [16], [0, 256]).flatten()
+    
     h_hist /= (h_hist.sum() + 1e-7)
     s_hist /= (s_hist.sum() + 1e-7)
     v_hist /= (v_hist.sum() + 1e-7)
 
-    # Per-channel mean & std (scaled 0–1)
-    means, stds = cv2.meanStdDev(img)
+    # 3. Global statistics (normalized 0-1)
+    means, stds = cv2.meanStdDev(img_std)
     stats = np.concatenate([means.flatten(), stds.flatten()]) / 255.0
 
-    # Edge density
-    gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 100, 200)
+    # 4. Texture/Edge Density
+    gray  = cv2.cvtColor(img_std, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
     edge_density = float(np.sum(edges > 0)) / (IMG_SIZE[0] * IMG_SIZE[1])
 
     return np.concatenate([h_hist, s_hist, v_hist, stats, [edge_density]])
@@ -81,10 +69,10 @@ FEATURE_DIM = len(extract_features(np.zeros((8, 8, 3), dtype=np.uint8)))  # = 63
 def extract_features_raw(img: np.ndarray) -> np.ndarray:
     """
     Legacy extractor — raw pixel flatten (128×128×3 = 49152 dims).
-    Used automatically when the loaded model was trained this way.
-    DO NOT use for new training; use extract_features() instead.
+    CRITICAL: Now normalizes to 0-1 to fix 'wrong results' error.
     """
-    return cv2.resize(img, IMG_SIZE).flatten().astype(np.float64)
+    resized = cv2.resize(img, IMG_SIZE).astype(np.float64) / 255.0
+    return resized.flatten()
 
 
 def get_feature_mode(model) -> str:
@@ -352,6 +340,7 @@ def build_quantum_circuit(img: np.ndarray) -> tuple[QuantumCircuit, float]:
     return qc, entropy_norm
 
 
+
 def run_quantum(qc: QuantumCircuit, backend_pref: str = "Simulator Only"):
     """Run on IBM Cloud or fall back to local Sampler."""
     try:
@@ -386,3 +375,43 @@ def run_quantum(qc: QuantumCircuit, backend_pref: str = "Simulator Only"):
         else:
             counts = result[0].data.c.get_counts()
         return counts, "local-simulator"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXTERNAL API INTEGRATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+def identify_plant_plantnet(img_bgr: np.ndarray) -> dict:
+    """
+    Call Pl@ntNet API for professional species identification.
+    Requires PLANTNET_API_KEY in .env.
+    """
+    import requests
+    import json
+
+    api_key = os.getenv("PLANTNET_API_KEY", "")
+    if not api_key:
+        return {"error": "No PlantNet API key found in .env"}
+
+    # Encode to JPEG
+    _, buf = cv2.imencode(".jpg", img_bgr)
+    files = {"images": ("image.jpg", buf.tobytes())}
+
+    url = f"https://my-api.plantnet.org/v2/identify/all?api-key={api_key}"
+    
+    try:
+        response = requests.post(url, files=files)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Parse top result
+        if data.get("results"):
+            best = data["results"][0]
+            return {
+                "plant": best["species"]["commonNames"][0] if best["species"]["commonNames"] else best["species"]["scientificName"],
+                "score": round(best["score"] * 100, 1),
+                "scientific_name": best["species"]["scientificName"],
+                "family": best["species"]["family"]["scientificNameWithoutAuthor"],
+            }
+        return {"error": "No plant identified by PlantNet."}
+    except Exception as e:
+        return {"error": f"PlantNet API error: {str(e)}"}

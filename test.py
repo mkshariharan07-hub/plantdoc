@@ -44,6 +44,7 @@ try:
     from utils import (
         extract_features, FEATURE_DIM, decode_bytes_to_bgr,
         get_disease_info, predict_image, load_model_and_scaler,
+        identify_plant_plantnet,
         MODEL_PATH, SCALER_PATH
     )
     check("utils.py imports OK", True)
@@ -205,8 +206,13 @@ try:
             check("Response has plant/disease/confidence",
                   all(k in d for k in ["plant", "disease", "confidence"]))
 
+# ── Test 9: PlantNet API ────────────────────────────────────────────────────
+print("\n[9] External API Stubs")
+try:
+    # We can't actually call the API without a key, but we can test the function exists
+    check("PlantNet function exists", callable(identify_plant_plantnet))
 except Exception as e:
-    check("Flask API tests", False, str(e))
+    check("PlantNet test", False, str(e))
 
 
 # ── Summary ───────────────────────────────────────────────────────────────────

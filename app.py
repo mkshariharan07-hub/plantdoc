@@ -30,6 +30,7 @@ from utils import (
     run_quantum,
     extract_features,
     FEATURE_DIM,
+    identify_plant_plantnet,
     FEATURE_MODE_RAW, 
     FEATURE_MODE_HIST
 )
@@ -234,14 +235,16 @@ with st.sidebar:
     try:
         import numpy as _np
         _dummy = _np.zeros((64, 64, 3), dtype=_np.uint8)
-        _ef = extract_features
-        _fd = FEATURE_DIM
-        _fv = _ef(_dummy)
-        _feat_ok = _fv.shape == (_fd,)
+        from utils import extract_for_model as _efm
+        _mode = get_feature_mode(model)
+        _fv   = _efm(_dummy, model)
+        _expected_dim = model.n_features_in_
+        _feat_ok = _fv.shape == (1, _expected_dim)
     except Exception as _fe:
         _feat_ok = False
+        _expected_dim = "Unknown"
     _status_row("Feature extraction", _feat_ok,
-                f"Output shape: {_fv.shape[0]} dims" if _feat_ok else str(_fe))
+                f"Mode: {_mode} | Dims: {_expected_dim}" if _feat_ok else str(_fe))
 
     # 5. Predict pipeline (end-to-end with dummy image)
     try:
@@ -262,10 +265,10 @@ with st.sidebar:
     _status_row("Quantum circuit", _qc_ok,
                 f"{_qc.num_qubits}-qubit circuit, entropy={_ent:.3f}" if _qc_ok else str(_qe))
 
-    # 7. IBM Token
-    _token = os.getenv("IBM_QUANTUM_TOKEN", "")
-    _status_row("IBM Quantum token", bool(_token),
-                "Token present" if _token else "Not set — quantum will use local simulator")
+    # 7. PlantNet API
+    _pnet_token = os.getenv("PLANTNET_API_KEY", "")
+    _status_row("PlantNet API", bool(_pnet_token),
+                "API Key present" if _pnet_token else "Key missing — set PLANTNET_API_KEY in .env")
 
     # Overall
     _all_ok = all([os.path.exists("plant_model.pkl"), model is not None, _feat_ok, _pred_ok, _qc_ok])
@@ -385,6 +388,26 @@ with col2:
 
         # Treatment tips
         st.info(f"💊 **Treatment Tip:** {info['tips']}")
+
+        # ── 1.5 PLANTNET VERIFICATION (OPTIONAL) ─────────────────
+        if os.getenv("PLANTNET_API_KEY"):
+            with st.expander("🌍 Verify with Pl@ntNet (Expert identification)"):
+                st.write("Cross-reference our AI prediction with the professional PlantNet database.")
+                if st.button("Query PlantNet API", key="pnet_btn"):
+                    with st.spinner("Talking to PlantNet servers..."):
+                        p_res = identify_plant_plantnet(active_img)
+                        if "error" in p_res:
+                            st.error(p_res["error"])
+                        else:
+                            st.success(f"**PlantNet thinks this is:** {p_res['plant']}")
+                            st.write(f"- Scientific: *{p_res['scientific_name']}*")
+                            st.write(f"- Family: {p_res['family']}")
+                            st.write(f"- Confidence Score: **{p_res['score']}%**")
+                            
+                            if p_res['plant'].lower() in plant.lower() or plant.lower() in p_res['plant'].lower():
+                                st.info("✅ **Identification Match!** Our local AI and PlantNet agree on the species.")
+                            else:
+                                st.warning("⚠️ **Identification Discrepancy.** The species detected by PlantNet differs from our local AI.")
 
         # Top-5 probabilities
         with st.expander("📊 Full Prediction Breakdown"):
