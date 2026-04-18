@@ -23,6 +23,7 @@ if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
 from utils import (
     predict_image, 
     get_disease_info,
+    FALLBACK_INFO,
     get_feature_mode, 
     load_model_and_scaler,
     decode_bytes_to_bgr, 

@@ -206,7 +206,7 @@ DISEASE_INFO: dict[str, dict] = {
     },
 }
 
-_FALLBACK_INFO = {
+FALLBACK_INFO = {
     "severity": "medium",
     "color":    "#f59e0b",
     "emoji":    "⚠️",
@@ -228,7 +228,7 @@ def get_disease_info(disease: str) -> dict:
     for k, v in DISEASE_INFO.items():
         if k in key or key in k:
             return v
-    return _FALLBACK_INFO
+    return FALLBACK_INFO
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
