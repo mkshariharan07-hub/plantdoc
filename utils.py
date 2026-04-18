@@ -657,6 +657,46 @@ def compute_chlorophyll_degradation(image) -> float:
         return 0.0
 
 
+def generate_pathogen_mask(image):
+    """
+    Startup MVP Enterprise Feature: Computer vision pathogen bounding box structural scanner.
+    Locates exact geometric dimensions of necrotic tissue and draws aggressive red targeting boxes.
+    """
+    import cv2
+    import numpy as np
+    try:
+        overlay = image.copy()
+        hsv = cv2.cvtColor(overlay, cv2.COLOR_BGR2HSV)
+        
+        # Find the dead/yellow/brown space by subtracting healthy green from the main leaf body
+        lower_green = np.array([30, 40, 40])
+        upper_green = np.array([90, 255, 255])
+        green_mask = cv2.inRange(hsv, lower_green, upper_green)
+        
+        gray = cv2.cvtColor(overlay, cv2.COLOR_BGR2GRAY)
+        _, fg_mask = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
+        
+        pathogen_mask = cv2.bitwise_and(cv2.bitwise_not(green_mask), fg_mask)
+        
+        # Mitigate biological static via morph ops
+        kernel = np.ones((5,5), np.uint8)
+        pathogen_mask = cv2.morphologyEx(pathogen_mask, cv2.MORPH_OPEN, kernel)
+        
+        contours, _ = cv2.findContours(pathogen_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area > 150: # Exclude tiny specks
+                x, y, w, h = cv2.boundingRect(cnt)
+                # BGR targeting box: Red (0,0,255)
+                cv2.rectangle(overlay, (x, y), (x+w, y+h), (0, 0, 255), 3)
+                cv2.putText(overlay, f"THREAT: {int(area)}px", (x, y-8), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                
+        return overlay
+    except Exception as e:
+        return image
+
+
 def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level: str, treatment: str, risk_score: float = 0.0, leaf_health: float = 100.0, care_data: dict = None, necrotic_ratio: float = 0.0) -> bytes:
     """
     Generate an intense, multi-page professional PDF Clinical Dossier using fpdf2 and matplotlib graphs.

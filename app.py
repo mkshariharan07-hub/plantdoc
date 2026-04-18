@@ -16,6 +16,7 @@ import json
 import datetime
 import requests
 from dotenv import load_dotenv
+import pandas as pd
 
 # Load environment variables at the very beginning
 load_dotenv()
@@ -44,6 +45,7 @@ from utils import (
     generate_pdf_report,
     simulate_environment,
     compute_chlorophyll_degradation,
+    generate_pathogen_mask,
     FEATURE_MODE_RAW, 
     FEATURE_MODE_HIST
 )
@@ -137,6 +139,26 @@ st.markdown("""
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
+    }
+
+    /* ═══ SCIFI NEON BUTTON OVERRIDES ═══ */
+    .stButton > button {
+        background: rgba(16, 185, 129, 0.05) !important;
+        border: 1px solid #10b981 !important;
+        color: #34d399 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        letter-spacing: 2px !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.1), 0 0 15px rgba(16, 185, 129, 0.2) !important;
+        border-radius: 4px !important;
+        text-transform: uppercase !important;
+    }
+    .stButton > button:hover {
+        background: rgba(16, 185, 129, 0.2) !important;
+        border-color: #34d399 !important;
+        color: #ffffff !important;
+        box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.4), 0 0 30px rgba(16, 185, 129, 0.6) !important;
+        transform: translateY(-2px) !important;
     }
     .hero-subtitle {
         color: #64748b;
@@ -1234,7 +1256,11 @@ with col2:
             st.markdown("---")
             st.markdown("### 🎛️ Advanced Operations Dashboard")
             
-            tab_eco, tab_ops, tab_bio, tab_matrix = st.tabs(["💰 Yield Economics & Intel", "🛰️ Tactical Operations", "🧬 Micro-Genomic Analysis", "🎛️ 50-Node Deep Matrix"])
+            tab_eco, tab_ops, tab_bio, tab_matrix, tab_radar = st.tabs([
+                "💰 Yield Economics & Intel", "🛰️ Tactical Operations", 
+                "🧬 Micro-Genomic Analysis", "🎛️ 50-Node Deep Matrix",
+                "🌍 Orbital Pathogen Radar"
+            ])
             
             with tab_eco:
                 mega_c1, mega_c2 = st.columns([1, 1], gap="medium")
@@ -1329,6 +1355,13 @@ with col2:
                             </button>
                         </div>
                         """, unsafe_allow_html=True)
+                    
+                    st.markdown("#### 📱 Automated Incident Dispatch (Webhooks)")
+                    st.caption("Enterprise integration mimicking Twilio SMS alerting for immediate farm-hand deployment.")
+                    with st.form("sms_dispatch_form", clear_on_submit=True):
+                        phone_num = st.text_input("Farm Dispatch Contact Number", placeholder="+1 (555) 019-8372")
+                        if st.form_submit_button("🔥 DISPATCH EMERGENCY SMS"):
+                            st.success(f"Webhook Triggered! SMS payload sent to {phone_num}: \n\n*ALARM: {disease_name} detected at Sector 7. Quantum Risk: {risk_score}%. Execute Quarantine Protocol immediately.*")
                         
             with tab_bio:
                 st.markdown("#### 🧬 Cellular Infrared Synthesizer")
@@ -1364,6 +1397,14 @@ with col2:
                                 dna_seq += random.choice(bases)
                         st.markdown(f"<div style='font-family: monospace; color: #f8fafc; background: #020617; padding: 10px; border-radius: 5px; word-wrap: break-word; letter-spacing: 2px;'>{dna_seq}</div>", unsafe_allow_html=True)
                         st.error(f"⚠️ GENETIC DEGRADATION: ~{mut_rate}% of base pairs compromised by {disease_name.split()[0]} pathogens.")
+
+                    st.markdown("<br>##### 🎯 Computer Vision Bounding Matrix", unsafe_allow_html=True)
+                    st.caption("Enterprise-grade analytical overlay isolating geometric decay boundaries.")
+                    if "healthy" not in disease_name.lower():
+                        v_mask = generate_pathogen_mask(active_img)
+                        st.image(cv2.cvtColor(v_mask, cv2.COLOR_BGR2RGB), caption="Identified Defect Clusters", use_column_width=True)
+                    else:
+                        st.success("Specimen cleared. No defect boundaries mapped.")
 
                 st.markdown("<br>##### 🌌 3D Holographic Topography Engine", unsafe_allow_html=True)
                 st.caption("Interactive topographical matrix representing tissue density across the Z-axis. Drag to rotate.")
@@ -1428,6 +1469,51 @@ with col2:
                             delta_color=color_status
                         )
                 st.markdown("<br><hr>", unsafe_allow_html=True)
+
+            with tab_radar:
+                st.markdown("#### 🌍 Satellite & Orbital Threat Radar")
+                st.caption("Live geographical projection mapping of localized pathogen outbreaks and synthetic data points across international clusters.")
+                import pydeck as pdk
+                # Generate random synthetic geolocations for the glowing map
+                # Center roughly around continental USA (Lat 39, Lon -98)
+                if "healthy" in disease_name.lower():
+                    st.success("No active threat vectors connected to this specimen.")
+                else:
+                    cluster_size = max(50, int(risk_score * 20))
+                    outbreak_data = pd.DataFrame(
+                        np.random.randn(cluster_size, 2) * [10, 20] + [39.0, -98.0],
+                        columns=['lat', 'lon']
+                    )
+                    
+                    st.pydeck_chart(pdk.Deck(
+                        map_style='mapbox://styles/mapbox/dark-v11',
+                        initial_view_state=pdk.ViewState(
+                            latitude=39.0,
+                            longitude=-98.0,
+                            zoom=3.5,
+                            pitch=45,
+                        ),
+                        layers=[
+                            pdk.Layer(
+                                'ScatterplotLayer',
+                                data=outbreak_data,
+                                get_position='[lon, lat]',
+                                get_color='[239, 68, 68, 160]' if risk_score > 40 else '[245, 158, 11, 160]',
+                                get_radius=50000,
+                            ),
+                            pdk.Layer(
+                                'HexagonLayer',
+                                data=outbreak_data,
+                                get_position='[lon, lat]',
+                                radius=100000,
+                                elevation_scale=50,
+                                elevation_range=[0, 3000],
+                                pickable=True,
+                                extruded=True,
+                                get_fill_color='[16, 185, 129, 200]'
+                            )
+                        ],
+                    ))
 
             # --- J.A.R.V.I.S. AUDIO ENGINE ---
             import streamlit.components.v1 as components
