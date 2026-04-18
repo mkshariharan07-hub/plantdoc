@@ -13,6 +13,12 @@ Tests:
 """
 
 import sys
+import os
+
+# Force UTF-8 encoding for standard output to avoid Windows console errors with emojis
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 import numpy as np
 import cv2
 
@@ -149,8 +155,19 @@ else:
         check("Model/scaler load", False, str(e))
 
 
-# ── Test 7: Flask API ─────────────────────────────────────────────────────────
-print("\n[7] Flask API Routes")
+# ── Test 7: Quantum Circuit ──────────────────────────────────────────────────
+print("\n[7] Quantum Integration")
+try:
+    from app import build_quantum_circuit
+    qc, entropy = build_quantum_circuit(dummy_bgr)
+    check("Quantum circuit builds", qc.num_qubits == 4)
+    check("Entropy calculation works", 0.0 <= entropy <= 1.0, f"entropy={entropy:.3f}")
+except Exception as e:
+    check("Quantum circuit test", False, str(e))
+
+
+# ── Test 8: Flask API ─────────────────────────────────────────────────────────
+print("\n[8] Flask API Routes")
 try:
     # Import server without starting it
     import importlib, io

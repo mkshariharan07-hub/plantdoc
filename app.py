@@ -6,6 +6,7 @@ histogram features (63) and extracts accordingly — no retraining needed
 for the app to work. Retrain with main.py for best accuracy.
 """
 
+import sys
 import streamlit as st
 import cv2
 import numpy as np
@@ -16,12 +17,17 @@ import datetime
 from qiskit import QuantumCircuit, transpile
 from qiskit_ibm_runtime import QiskitRuntimeService, Sampler
 
+# Force UTF-8 encoding for standard output to avoid Windows console errors with emojis
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 # Shared utilities — single source of truth for features & prediction
 from utils import (
     predict_image, get_disease_info,
     get_feature_mode, load_model_and_scaler,
     FEATURE_MODE_RAW, FEATURE_MODE_HIST,
-    decode_bytes_to_bgr
+    decode_bytes_to_bgr, build_quantum_circuit,
+    run_quantum
 )
 
 # ===============================
@@ -98,89 +104,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ===============================
-# DISEASE KNOWLEDGE BASE
-# ===============================
-DISEASE_INFO = {
-    "healthy": {
-        "severity": "low",
-        "tips": "✅ No treatment needed. Maintain regular watering and sunlight.",
-        "emoji": "🌱"
-    },
-    "early_blight": {
-        "severity": "medium",
-        "tips": "🌿 Remove affected leaves. Apply copper-based fungicide. Avoid overhead watering.",
-        "emoji": "🟡"
-    },
-    "late_blight": {
-        "severity": "high",
-        "tips": "🚨 Isolate plant immediately. Apply mancozeb or chlorothalonil. Destroy infected tissue.",
-        "emoji": "🔴"
-    },
-    "leaf_mold": {
-        "severity": "medium",
-        "tips": "💨 Improve air circulation. Apply fungicide. Reduce humidity.",
-        "emoji": "🟠"
-    },
-    "bacterial_spot": {
-        "severity": "high",
-        "tips": "⚗️ Use copper-based bactericide. Avoid working with wet plants.",
-        "emoji": "🔴"
-    },
-    "common_rust": {
-        "severity": "medium",
-        "tips": "🌾 Apply triazole fungicide early. Rotate crops next season.",
-        "emoji": "🟠"
-    },
-    "northern_leaf_blight": {
-        "severity": "high",
-        "tips": "🚜 Apply fungicide at first sign. Use resistant varieties next cycle.",
-        "emoji": "🔴"
-    },
-    "gray_leaf_spot": {
-        "severity": "medium",
-        "tips": "🌤 Improve drainage. Apply strobilurin fungicide preventively.",
-        "emoji": "🟡"
-    },
-}
-
-def get_disease_info(disease_key: str) -> dict:
-    """Return treatment info for a disease, with a safe fallback."""
-    key = disease_key.lower().replace(" ", "_")
-    for k, v in DISEASE_INFO.items():
-        if k in key:
-            return v
-    return {"severity": "medium", "tips": "Consult an agronomist for targeted treatment.", "emoji": "⚠️"}
-
-
-# ===============================
-# FEATURE EXTRACTION (mirrors main.py exactly)
-# ===============================
-def extract_features(img: np.ndarray) -> np.ndarray:
-    """
-    Deterministic feature vector — MUST match main.py exactly.
-    Includes histogram normalization added in main.py v2.
-    """
-    img = cv2.resize(img, (128, 128))
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-    h_hist = cv2.calcHist([hsv], [0], None, [24], [0, 180]).flatten()
-    s_hist = cv2.calcHist([hsv], [1], None, [16], [0, 256]).flatten()
-    v_hist = cv2.calcHist([hsv], [2], None, [16], [0, 256]).flatten()
-
-    # Normalize histograms (matches main.py v2)
-    h_hist /= (h_hist.sum() + 1e-7)
-    s_hist /= (s_hist.sum() + 1e-7)
-    v_hist /= (v_hist.sum() + 1e-7)
-
-    means, stds = cv2.meanStdDev(img)
-    stats = np.concatenate([means.flatten(), stds.flatten()]) / 255.0
-
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 100, 200)
-    edge_density = np.sum(edges > 0) / (128 * 128)
-
-    return np.concatenate([h_hist, s_hist, v_hist, stats, [edge_density]])
+# (Using DISEASE_INFO and extract_features from utils.py)
 
 
 # ===============================
@@ -221,81 +145,6 @@ def decode_image_source(source_file, source_type: str = "upload"):
         st.session_state["cached_img"] = img
         st.session_state["cached_img_key"] = file_key
     return st.session_state["cached_img"]
-
-
-# ===============================
-# QUANTUM CIRCUIT
-# ===============================
-def build_quantum_circuit(img: np.ndarray) -> tuple[QuantumCircuit, float]:
-    """
-    Richer 4-qubit circuit encoding:
-      Q0 — mean brightness gate
-      Q1 — edge density gate
-      Q2-Q3 — entanglement for consensus measurement
-    Returns (circuit, entropy_score).
-    """
-    small = cv2.resize(img, (64, 64))
-    gray  = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY).astype(float) / 255.0
-
-    mean_val    = float(np.mean(gray))
-    edge_dens   = float(np.sum(cv2.Canny((gray * 255).astype(np.uint8), 50, 150) > 0) / (64 * 64))
-
-    # Shannon entropy on histogram
-    hist, _ = np.histogram(gray, bins=32, range=(0, 1))
-    hist    = hist / (hist.sum() + 1e-7)
-    entropy = float(-np.sum(hist * np.log2(hist + 1e-9)))  # 0–5 scale
-    entropy_norm = min(entropy / 5.0, 1.0)
-
-    qc = QuantumCircuit(4, 4)
-    # Encode image features as rotation angles
-    from math import pi
-    qc.ry(mean_val * pi, 0)
-    qc.ry(edge_dens * pi, 1)
-    qc.ry(entropy_norm * pi, 2)
-    # Entangle for joint measurement
-    qc.cx(0, 3)
-    qc.cx(1, 3)
-    qc.cx(2, 3)
-    qc.h(3)
-    qc.measure([0, 1, 2, 3], [0, 1, 2, 3])
-
-    return qc, entropy_norm
-
-
-def run_quantum(qc: QuantumCircuit, backend_pref: str):
-    """Run on IBM Cloud or fall back to local StatevectorSampler."""
-    try:
-        IBM_TOKEN = os.getenv("IBM_QUANTUM_TOKEN", "")
-        if not IBM_TOKEN:
-            raise ValueError("No IBM token.")
-        service = QiskitRuntimeService(channel="ibm_quantum_platform", token=IBM_TOKEN)
-        if backend_pref == "Simulator Only":
-            backend = service.backend("ibmq_qasm_simulator")
-        else:
-            try:
-                backend = service.least_busy(simulator=False, min_qubits=4)
-            except Exception:
-                backend = service.least_busy(simulator=True)
-        qc_t = transpile(qc, backend)
-        sampler = Sampler(backend)
-        job = sampler.run([qc_t], shots=1024)
-        result = job.result()
-        counts = result[0].data.c.get_counts()
-        return counts, backend.name
-    except Exception:
-        # Local fallback
-        try:
-            from qiskit.primitives import StatevectorSampler as LS
-        except ImportError:
-            from qiskit.primitives import Sampler as LS
-        sampler = LS()
-        job = sampler.run([qc])
-        result = job.result()
-        if hasattr(result, "quasi_dist"):
-            counts = result.quasi_dist[0].binary_probabilities()
-        else:
-            counts = result[0].data.c.get_counts()
-        return counts, "local-simulator"
 
 
 # ===============================

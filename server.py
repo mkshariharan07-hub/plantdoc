@@ -4,6 +4,12 @@ server.py — PlantPulse Flask REST API v2
 Uses shared utils.py — no feature extraction duplication.
 """
 
+import sys
+
+# Force UTF-8 encoding for standard output to avoid Windows console errors with emojis
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import numpy as np

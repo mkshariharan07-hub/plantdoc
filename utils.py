@@ -15,6 +15,8 @@ import cv2
 import numpy as np
 import os
 from typing import Optional
+from qiskit import QuantumCircuit, transpile
+from qiskit_ibm_runtime import QiskitRuntimeService, Sampler
 
 # ── Artifact paths (one place to change if you move files) ────────────────────
 MODEL_PATH  = "plant_model.pkl"
@@ -309,3 +311,78 @@ def predict_image(img_bgr: np.ndarray, model, scaler=None) -> dict:
         "emoji":        info["emoji"],
         "feature_mode": mode,   # 'raw_pixels' or 'histogram'
     }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# QUANTUM LOGIC
+# ═══════════════════════════════════════════════════════════════════════════════
+def build_quantum_circuit(img: np.ndarray) -> tuple[QuantumCircuit, float]:
+    """
+    Richer 4-qubit circuit encoding:
+      Q0 — mean brightness gate
+      Q1 — edge density gate
+      Q2-Q3 — entanglement for consensus measurement
+    Returns (circuit, entropy_score).
+    """
+    # Resize for quick quantum simulation bottleneck
+    small = cv2.resize(img, (64, 64))
+    gray  = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY).astype(float) / 255.0
+
+    mean_val    = float(np.mean(gray))
+    edge_dens   = float(np.sum(cv2.Canny((gray * 255).astype(np.uint8), 50, 150) > 0) / (64 * 64))
+
+    # Shannon entropy on histogram
+    hist, _ = np.histogram(gray, bins=32, range=(0, 1))
+    hist    = hist / (hist.sum() + 1e-7)
+    entropy = float(-np.sum(hist * np.log2(hist + 1e-9)))  # 0–5 scale
+    entropy_norm = min(entropy / 5.0, 1.0)
+
+    qc = QuantumCircuit(4, 4)
+    from math import pi
+    qc.ry(mean_val * pi, 0)
+    qc.ry(edge_dens * pi, 1)
+    qc.ry(entropy_norm * pi, 2)
+    # Entangle for joint measurement
+    qc.cx(0, 3)
+    qc.cx(1, 3)
+    qc.cx(2, 3)
+    qc.h(3)
+    qc.measure([0, 1, 2, 3], [0, 1, 2, 3])
+
+    return qc, entropy_norm
+
+
+def run_quantum(qc: QuantumCircuit, backend_pref: str = "Simulator Only"):
+    """Run on IBM Cloud or fall back to local Sampler."""
+    try:
+        IBM_TOKEN = os.getenv("IBM_QUANTUM_TOKEN", "")
+        if not IBM_TOKEN:
+            raise ValueError("No IBM token.")
+        service = QiskitRuntimeService(channel="ibm_quantum_platform", token=IBM_TOKEN)
+        if backend_pref == "Simulator Only":
+            backend = service.backend("ibmq_qasm_simulator")
+        else:
+            try:
+                backend = service.least_busy(simulator=False, min_qubits=4)
+            except Exception:
+                backend = service.least_busy(simulator=True)
+        qc_t = transpile(qc, backend)
+        sampler = Sampler(backend)
+        job = sampler.run([qc_t], shots=1024)
+        result = job.result()
+        counts = result[0].data.c.get_counts()
+        return counts, backend.name
+    except Exception:
+        # Local fallback
+        try:
+            from qiskit.primitives import StatevectorSampler as LS
+        except ImportError:
+            from qiskit.primitives import Sampler as LS
+        sampler = LS()
+        job = sampler.run([qc])
+        result = job.result()
+        if hasattr(result, "quasi_dist"):
+            counts = result.quasi_dist[0].binary_probabilities()
+        else:
+            counts = result[0].data.c.get_counts()
+        return counts, "local-simulator"
