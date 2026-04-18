@@ -1,5 +1,5 @@
 """
-utils.py — PlantPulse Shared Utilities
+utils.py — PlantPulse Shared Utilities (v2.1)
 =======================================
 Single source of truth for:
   • Feature extraction  (used by main.py, app.py, server.py)

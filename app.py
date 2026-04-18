@@ -234,7 +234,8 @@ with st.sidebar:
     try:
         import numpy as _np
         _dummy = _np.zeros((64, 64, 3), dtype=_np.uint8)
-        from utils import extract_features as _ef, FEATURE_DIM as _fd
+        _ef = extract_features
+        _fd = FEATURE_DIM
         _fv = _ef(_dummy)
         _feat_ok = _fv.shape == (_fd,)
     except Exception as _fe:
