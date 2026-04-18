@@ -811,6 +811,11 @@ with st.sidebar:
         st.caption("No analyses yet this session.")
 
     st.markdown("---")
+    st.markdown("### 💳 API Token Billing")
+    st.progress(84/100, text="Monthly Quota: 8,400 / 10,000 Scans")
+    st.caption("Upgrade to **PlantPulse ENTERPRISE** for unlimited Quantum Matrix access, automated SMS webhooks, and priority API pooling.")
+
+    st.markdown("---")
     with st.expander("🗄️ Master SQL Database Ledger"):
         st.caption("Live connection to massive persistent SQLite cluster tracking global anomalies.")
         try:
@@ -1336,6 +1341,23 @@ with col2:
                         <p style='font-size:0.85rem; color:#cbd5e1; font-family: monospace;'>► Matrix output: {int((hum_percent/100)*risk_score)}% reproduction capacity at {temp_c}°C</p>
                     </div>
                     """, unsafe_allow_html=True)
+                    
+                    st.markdown("<br>#### 🔌 Live IoT Hardware Sensor Mesh", unsafe_allow_html=True)
+                    st.caption("Establish low-latency Zigbee connection to localized field sensors (Sub-Surface NPK, Capillary Hydrometers).")
+                    iot_toggle = st.toggle("Enable Live Sensor Telemetry Sink", value=False)
+                    if iot_toggle:
+                        st.success("✅ Secure Handshake established with 3 Field Nodes via 900MHz LoRaWAN.")
+                        # Generate simulated hardware data
+                        npk_data = pd.DataFrame(np.random.randn(50, 3) * 5 + [50, 40, 30], columns=["Nitrogen (N)", "Phosphorus (P)", "Potassium (K)"])
+                        hydro_data = pd.DataFrame(np.cumsum(np.random.randn(50) * 1.5) + 60, columns=["Soil Moisture (%)"])
+                        
+                        st.markdown("**Sub-Surface NPK Trace Deficits (Live)**")
+                        st.line_chart(npk_data, use_container_width=True, height=180)
+                        
+                        st.markdown("**Soil Capillary Hydration**")
+                        st.area_chart(hydro_data, use_container_width=True, height=180)
+                        
+                        st.warning("⚠️ Warning: Nitrogen deficit detected at Node 02. Recommend targeted fertilizer drop.")
 
                 with mega_c4:
                     st.markdown("#### 🚁 Autonomous Drone Protocol")
