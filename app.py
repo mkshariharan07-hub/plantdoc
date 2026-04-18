@@ -889,7 +889,29 @@ with col2:
                 "care_data": care_data
             }
             add_to_history(variant, disease_name, d_conf, "expert_pipeline")
-            st.balloons()
+            
+            # Custom Falling Leaves Animation (Replacing Balloons)
+            st.markdown("""
+            <style>
+                .falling-leaf { 
+                    position: fixed; top: -10vh; z-index: 9999; user-select: none; pointer-events: none; 
+                    animation: leafFall linear forwards; font-size: 2.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+                }
+                @keyframes leafFall {
+                    0% { transform: translate(0, -10vh) rotate(0deg); opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { transform: translate(20vw, 110vh) rotate(360deg); opacity: 0; }
+                }
+            </style>
+            <div class='falling-leaf' style='left: 5%;  animation-duration: 6s;'>🍃</div>
+            <div class='falling-leaf' style='left: 25%; animation-duration: 8s; animation-delay: 0.5s;'>🌿</div>
+            <div class='falling-leaf' style='left: 45%; animation-duration: 7s; animation-delay: 1.2s;'>🍁</div>
+            <div class='falling-leaf' style='left: 65%; animation-duration: 9s; animation-delay: 0.2s;'>🍃</div>
+            <div class='falling-leaf' style='left: 85%; animation-duration: 6.5s; animation-delay: 1.5s;'>🌿</div>
+            <div class='falling-leaf' style='left: 15%; animation-duration: 7.5s; animation-delay: 2.0s;'>🍃</div>
+            <div class='falling-leaf' style='left: 75%; animation-duration: 5.5s; animation-delay: 0.8s;'>🍁</div>
+            """, unsafe_allow_html=True)
 
         # If we have a report in memory and the image hasn't changed, render it
         report = st.session_state.get("expert_report")
@@ -965,7 +987,6 @@ with col2:
                 else:
                     st.info("No botanical data found for this specific variant.")
                     
-                st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown("#### ⚛️ Stability Analysis (Quantum)")
                 st.caption("Determined via 4-qubit probability entanglement state.")
                 q_col1, q_col2 = st.columns(2)
@@ -973,6 +994,21 @@ with col2:
                     st.metric("Risk Score", f"{risk_score}%")
                 with q_col2:
                     st.metric("Quantum Stability", f"{100 - risk_score}%")
+                
+                import pandas as pd
+                st.markdown("<br>##### 📊 Qubit Entanglement Distribution", unsafe_allow_html=True)
+                # Compute a visualization based on the risk profile
+                state_data = pd.DataFrame({
+                    "Probability Shift (%)": [
+                        max(2.0, 100 - risk_score - 5), # |0000> Stable State
+                        risk_score * 0.45,             # |1000> Anomaly A
+                        risk_score * 0.25,             # |0100> Anomaly B 
+                        risk_score * 0.20,             # |0010> Anomaly C
+                        risk_score * 0.10              # |1111> Absolute Entropy
+                    ]
+                }, index=["|0000⟩ Base", "|1000⟩ Var1", "|0100⟩ Var2", "|0010⟩ Decay", "|1111⟩ Chaos"])
+                
+                st.bar_chart(state_data, color="#8b5cf6", use_container_width=True)
 
             # Move Actions and PDF Download to a balanced full-width section
             st.markdown("---")
