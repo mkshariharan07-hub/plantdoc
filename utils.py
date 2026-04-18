@@ -504,3 +504,43 @@ def identify_crop_health(img_bgr: np.ndarray) -> dict:
         }
     except Exception as e:
         return {"error": f"Crop.Health API error: {str(e)}"}
+
+
+def get_perenual_care_info(species_name: str) -> dict:
+    """
+    Search Perenual API for the given species to get specialized care guides.
+    Requires PERENUAL_API_KEY in .env.
+    """
+    import requests
+    api_key = os.getenv("PERENUAL_API_KEY", "")
+    if not api_key:
+        return {"error": "No Perenual API key found"}
+
+    try:
+        # Step 1: Search for species
+        search_url = f"https://perenual.com/api/species-list?key={api_key}&q={species_name}"
+        search_resp = requests.get(search_url)
+        search_resp.raise_for_status()
+        search_data = search_resp.json()
+
+        if not search_data.get("data"):
+            return {"error": f"No care data found for '{species_name}' in Perenual."}
+
+        # Step 2: Get details for the first match
+        plant_id = search_data["data"][0]["id"]
+        details_url = f"https://perenual.com/api/species/details/{plant_id}?key={api_key}"
+        details_resp = requests.get(details_url)
+        details_resp.raise_for_status()
+        details = details_resp.json()
+
+        return {
+            "watering": details.get("watering", "N/A"),
+            "sunlight": ", ".join(details.get("sunlight", [])) if details.get("sunlight") else "N/A",
+            "cycle": details.get("cycle", "N/A"),
+            "maintenance": details.get("maintenance", "N/A"),
+            "care_level": details.get("care_level", "N/A"),
+            "description": details.get("description", "No description available."),
+            "id": plant_id
+        }
+    except Exception as e:
+        return {"error": f"Perenual API error: {str(e)}"}

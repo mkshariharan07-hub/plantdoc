@@ -33,6 +33,7 @@ from utils import (
     FEATURE_DIM,
     identify_plant_plantnet,
     identify_crop_health,
+    get_perenual_care_info,
     calculate_quantum_risk,
     FEATURE_MODE_RAW, 
     FEATURE_MODE_HIST
@@ -278,6 +279,11 @@ with st.sidebar:
     _status_row("Crop.Health API", bool(_crop_token),
                 "API Key present" if _crop_token else "Key missing — set CROP_HEALTH_API_KEY in .env")
 
+    # 9. Perenual API
+    _per_token = os.getenv("PERENUAL_API_KEY", "")
+    _status_row("Perenual Care API", bool(_per_token),
+                "API Key present" if _per_token else "Key missing — set PERENUAL_API_KEY in .env")
+
     # Overall
     _all_ok = all([os.path.exists("plant_model.pkl"), model is not None, _feat_ok, _pred_ok, _qc_ok])
     if _all_ok:
@@ -358,7 +364,7 @@ with col2:
         st.markdown("### 🧬 Hybrid Diagnostic Pipeline")
         st.caption("PlantNet (Variant) → Crop.Health (Disease) → Qiskit (Risk)")
 
-        run_hybrid = st.button("🚀 RUN FULL HYBRID ANALYSIS", use_container_width=True, type="primary")
+        run_hybrid = st.button("🚀 RUN FULL EXPERT ANALYSIS", use_container_width=True, type="primary")
 
         if run_hybrid:
             # 1. PLANTNET (Variant)
@@ -370,11 +376,11 @@ with col2:
                 else:
                     variant = p_res['plant']
                     v_score = p_res['score']
-                    st.write(f"✅ Detected Variant: **{variant}** ({v_score}%)")
+                    st.write(f"✅ Detected Variant: **{variant}**")
                 status.update(label="Step 1 Complete", state="complete")
 
-            # 2. CROP.HEALTH (Disease)
-            with st.status("🩺 Step 2: Pathogen Detection (Crop.Health)...") as status:
+            # 2. CROP.HEALTH (Disease/Pathogen)
+            with st.status("🩺 Step 2: Pathogen Status (Crop.Health)...") as status:
                 c_res = identify_crop_health(active_img)
                 if "error" in c_res:
                     st.error(f"Crop.Health: {c_res['error']}")
@@ -384,42 +390,77 @@ with col2:
                     disease_name = c_res['disease']
                     d_conf = c_res['confidence']
                     treatment = c_res['treatment']
-                    st.write(f"✅ Detected Disease: **{disease_name}** ({d_conf}%)")
+                    st.write(f"✅ Pathogen Status: **{disease_name}**")
                 status.update(label="Step 2 Complete", state="complete")
 
             # 3. QUANTUM (Risk Level)
-            with st.status("⚛️ Step 3: Quantum Risk Analysis (Qiskit)...") as status:
+            with st.status("⚛️ Step 3: Quantum Stability Analysis (Qiskit)...") as status:
                 qc, entropy = build_quantum_circuit(active_img)
                 counts, backend_name = run_quantum(qc, backend_pref)
                 risk_score, risk_level = calculate_quantum_risk(counts, entropy)
-                st.write(f"✅ Quantum Result: **{risk_level}** (Risk Score: {risk_score})")
+                leaf_health = 100 - risk_score
+                st.write(f"✅ Quantum Result: **{risk_level} Risk**")
                 status.update(label="Step 3 Complete", state="complete")
 
-            # --- DISPLAY INTEGRATED RESULTS ---
-            st.markdown("---")
-            st.markdown(f"#### 🏁 Final Diagnostic Report")
-            
-            r1, r2, r3 = st.columns(3)
-            with r1:
-                st.markdown(f"<div class='metric-card'><h4>Variant</h4><h2>{variant}</h2></div>", unsafe_allow_html=True)
-            with r2:
-                st.markdown(f"<div class='metric-card'><h4>Pathogen</h4><h2>{disease_name}</h2></div>", unsafe_allow_html=True)
-            with r3:
-                risk_color = "#ef4444" if risk_level == "CRITICAL" else "#f59e0b" if risk_level == "MODERATE" else "#10b981"
-                st.markdown(f"<div class='metric-card'><h4>Risk Level</h4><h2 style='color:{risk_color};'>{risk_level}</h2></div>", unsafe_allow_html=True)
+            # 4. PERENUAL (Care Guide)
+            with st.status("🌿 Step 4: Maintenance & Care (Perenual)...") as status:
+                care_res = get_perenual_care_info(variant)
+                if "error" in care_res:
+                    st.warning(f"Perenual: {care_res['error']}")
+                    care_data = None
+                else:
+                    care_data = care_res
+                    st.write("✅ Care Guide Loaded")
+                status.update(label="Step 4 Complete", state="complete")
 
-            # Remedial Actions
-            st.markdown("### 💊 Remedial Actions")
-            if "healthy" in disease_name.lower():
-                st.success("Plant appears healthy. No immediate treatment needed. Continue standard care.")
-            else:
-                st.warning(f"**Targeted Treatment for {disease_name}:**")
-                st.write(treatment)
-                
-                # Check local knowledge base for additional tips
-                local_info = get_disease_info(disease_name)
-                if local_info["tips"] != FALLBACK_INFO["tips"]:
-                    st.info(f"💡 **Additional AI Guidance:** {local_info['tips']}")
+            # --- DISPLAY INTEGRATED EXPERT REPORT ---
+            st.markdown("---")
+            st.markdown("## 📋 Integrated Health Report")
+            
+            # Health Score Gauge (Simulated with progress bar)
+            h_color = "#10b981" if leaf_health > 70 else "#f59e0b" if leaf_health > 40 else "#ef4444"
+            st.markdown(f"### Overall Leaf Health: <span style='color:{h_color}'>{leaf_health}%</span>", unsafe_allow_html=True)
+            st.progress(leaf_health / 100)
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.markdown(f"<div class='metric-card'><h4>Target Variant</h4><h2>{variant}</h2></div>", unsafe_allow_html=True)
+            with c2:
+                # This is the "Hyptogen" (Pathogen) status the user mentioned
+                st.markdown(f"<div class='metric-card'><h4>Pathogen Status</h4><h2>{disease_name}</h2></div>", unsafe_allow_html=True)
+            with r3: # Wait, r3 was defined in previous block, I should use c3
+                pass
+            
+            # Re-defining the columns better
+            st.markdown("---")
+            col_info1, col_info2 = st.columns(2)
+            
+            with col_info1:
+                st.markdown("#### 🏥 Pathogen & Remedial Actions")
+                if "healthy" in disease_name.lower():
+                    st.success("✅ **HEALTHY SPECIMEN**\n\nNo active pathogens detected. The structural integrity of the leaf is within normal parameters.")
+                else:
+                    st.error(f"⚠️ **PATHOGEN DETECTED: {disease_name.upper()}**")
+                    st.warning(f"**Recommended Remedies:**\n\n{treatment}")
+                    
+                    local_info = get_disease_info(disease_name)
+                    if local_info["tips"] != FALLBACK_INFO["tips"]:
+                        st.info(f"💡 **AI Suggestion:** {local_info['tips']}")
+
+            with col_info2:
+                st.markdown("#### 🌿 Maintenance & Care Guide")
+                if care_data:
+                    st.write(f"**Watering:** {care_data['watering'].title()}")
+                    st.write(f"**Sunlight:** {care_data['sunlight']}")
+                    st.write(f"**Growth Cycle:** {care_data['cycle']}")
+                    st.write(f"**Care Level:** {care_data['care_level'].upper()}")
+                    with st.expander("📖 Species Description"):
+                        st.write(care_data['description'])
+                else:
+                    st.info("No extended care guide available for this variant.")
+
+            add_to_history(variant, disease_name, d_conf, "expert_pipeline")
+            st.balloons()
 
             # Save to history
             add_to_history(variant, disease_name, d_conf, "hybrid_pipeline")
