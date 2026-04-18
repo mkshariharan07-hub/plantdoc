@@ -11,3 +11,5 @@ python-dotenv
 requests
 fpdf2
 pandas
+matplotlib
+plotly

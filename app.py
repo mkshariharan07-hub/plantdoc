@@ -592,19 +592,45 @@ def decode_image_source(source_file, source_type: str = "upload"):
 
 # ===============================
 # SESSION HISTORY
+import sqlite3
+
+def init_db():
+    conn = sqlite3.connect('plantpulse_diagnostics.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS global_pathogen_ledger
+                 (timestamp TEXT, plant TEXT, disease TEXT, confidence REAL, risk_score REAL, source TEXT)''')
+    conn.commit()
+    conn.close()
+
+# Initialize ledger on boot
+init_db()
+
 # ===============================
-def add_to_history(plant: str, disease: str, confidence: float, source: str):
+def add_to_history(plant: str, disease: str, confidence: float, source: str, risk: float = 0.0):
     if "history" not in st.session_state:
         st.session_state["history"] = []
+    
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     record = {
-        "time": datetime.datetime.now().strftime("%H:%M:%S"),
+        "time": timestamp.split(" ")[1],
         "plant": plant,
         "disease": disease,
         "confidence": round(confidence, 1),
         "source": source,
     }
     st.session_state["history"].insert(0, record)
-    st.session_state["history"] = st.session_state["history"][:5]  # Keep last 5
+    st.session_state["history"] = st.session_state["history"][:5]  # Keep last 5 in memory
+    
+    # Push to SQLite Persistent Ledger
+    try:
+        conn = sqlite3.connect('plantpulse_diagnostics.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO global_pathogen_ledger VALUES (?, ?, ?, ?, ?, ?)", 
+                  (timestamp, plant, disease, confidence, risk, source))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Database write fault: {e}")
 
 
 # ===============================
@@ -761,6 +787,21 @@ with st.sidebar:
     else:
         st.caption("No analyses yet this session.")
 
+    st.markdown("---")
+    with st.expander("🗄️ Master SQL Database Ledger"):
+        st.caption("Live connection to massive persistent SQLite cluster tracking global anomalies.")
+        try:
+            import pandas as pd
+            import sqlite3
+            conn = sqlite3.connect('plantpulse_diagnostics.db')
+            ledger_df = pd.read_sql_query("SELECT * FROM global_pathogen_ledger", conn)
+            conn.close()
+            if not ledger_df.empty:
+                st.dataframe(ledger_df, use_container_width=True, hide_index=True)
+            else:
+                st.write("Database initialized. Awaiting global telemetry signals.")
+        except Exception as e:
+            st.error(f"SQL Connection fault: {e}")
 
 # ===============================
 # MAIN UI — HERO BANNER
@@ -896,7 +937,7 @@ with col2:
                 "risk_score": risk_score, "risk_level": risk_level, "leaf_health": leaf_health,
                 "care_data": care_data
             }
-            add_to_history(variant, disease_name, d_conf, "expert_pipeline")
+            add_to_history(variant, disease_name, d_conf, "expert_pipeline", risk_score)
             
             # Custom Falling Leaves Animation (Replacing Balloons)
             st.markdown("""
@@ -1183,7 +1224,7 @@ with col2:
                     use_container_width=True
                 )
 
-            add_to_history(variant, disease_name, d_conf, "expert_pipeline")
+            add_to_history(variant, disease_name, d_conf, "expert_pipeline", risk_score)
             
             # --- 50,000x & 1,000,000x MEGAMODULES ---
             st.markdown("---")
