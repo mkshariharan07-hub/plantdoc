@@ -476,6 +476,9 @@ with col2:
 
         run_hybrid = st.button("🚀 RUN FULL EXPERT ANALYSIS", use_container_width=True, type="primary")
 
+        # Track when a new image is loaded vs the report image
+        current_img_key = st.session_state.get("cached_img_key", "unknown")
+        
         if run_hybrid:
             # 1. PLANTNET (Variant)
             with st.status("🔍 Step 1: Identifying Plant Variant (PlantNet)...") as status:
@@ -522,6 +525,25 @@ with col2:
                     care_data = care_res
                     st.write("✅ Care Guide Loaded")
                 status.update(label="Step 4 Complete", state="complete")
+
+            # SAVE TO SESSION STATE
+            st.session_state["expert_report"] = {
+                "img_key": current_img_key,
+                "variant": variant, "v_score": v_score,
+                "disease_name": disease_name, "d_conf": d_conf, "treatment": treatment,
+                "risk_score": risk_score, "risk_level": risk_level, "leaf_health": leaf_health,
+                "care_data": care_data
+            }
+            add_to_history(variant, disease_name, d_conf, "expert_pipeline")
+            st.balloons()
+
+        # If we have a report in memory and the image hasn't changed, render it
+        report = st.session_state.get("expert_report")
+        if report and report["img_key"] == current_img_key:
+            variant, disease_name = report["variant"], report["disease_name"]
+            d_conf, care_data = report["d_conf"], report["care_data"]
+            leaf_health, risk_score = report["leaf_health"], report["risk_score"]
+            risk_level, treatment = report["risk_level"], report["treatment"]
 
             # --- DISPLAY INTEGRATED EXPERT REPORT ---
             st.markdown("---")
@@ -607,9 +629,19 @@ with col2:
                 st.markdown("#### 💬 Talk to Virtual Pathologist")
                 with st.expander("Ask Dr. Leaf"):
                     st.write("Our AI-driven pathologist 'Dr. Leaf' is available for deep-dive questions.")
+                    
+                    # We initialize Dr Leaf logic robustly to handle re-runs
+                    if "dr_leaf_chat" not in st.session_state:
+                        st.session_state["dr_leaf_chat"] = []
+                        
+                    for msg in st.session_state["dr_leaf_chat"]:
+                        st.info(msg)
+                        
                     user_q = st.text_input("Ask a question about this diagnosis:")
                     if user_q:
-                        st.info(f"Dr. Leaf says: For {disease_name}, ensure you rotate crops and check for {variant} core stability weekly.")
+                        reply = f"Dr. Leaf says: For {disease_name}, ensure you rotate crops and check for {variant} core stability weekly. You asked: '{user_q}'?"
+                        st.session_state["dr_leaf_chat"].append(reply)
+                        st.rerun()
             
             with action_c2:
                 st.markdown("#### 📥 Document Export")
