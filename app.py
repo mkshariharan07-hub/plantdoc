@@ -28,6 +28,8 @@ from utils import (
     decode_bytes_to_bgr, 
     build_quantum_circuit,
     run_quantum,
+    extract_features,
+    FEATURE_DIM,
     FEATURE_MODE_RAW, 
     FEATURE_MODE_HIST
 )
@@ -242,7 +244,7 @@ with st.sidebar:
 
     # 5. Predict pipeline (end-to-end with dummy image)
     try:
-        from utils import predict_image as _pi
+        _pi = predict_image
         _r = _pi(_dummy, model, scaler)
         _pred_ok = "plant" in _r and "confidence" in _r
     except Exception as _pe:
