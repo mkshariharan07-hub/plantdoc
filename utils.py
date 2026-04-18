@@ -628,10 +628,25 @@ def get_remedy_purchase_links(disease_name: str) -> list[dict]:
 
 def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level: str, treatment: str, risk_score: float = 0.0, leaf_health: float = 100.0, care_data: dict = None) -> bytes:
     """
-    Generate an intense, multi-page professional PDF Clinical Dossier using fpdf2.
+    Generate an intense, multi-page professional PDF Clinical Dossier using fpdf2 and matplotlib graphs.
     """
     from fpdf import FPDF
     import datetime
+    import os
+    import matplotlib.pyplot as plt
+
+    # --- GENERATE MATPLOTLIB CHART ---
+    chart_path = f"quantum_chart_temp_{datetime.datetime.now().strftime('%H%M%S')}.png"
+    plt.figure(figsize=(6, 3))
+    plt.style.use('dark_background')
+    states = ["|0000> Core", "|1000> V1", "|0100> V2", "|0010> Dcy", "|1111> N/A"]
+    probs = [max(2.0, 100 - risk_score - 5), risk_score * 0.45, risk_score * 0.25, risk_score * 0.20, risk_score * 0.10]
+    plt.bar(states, probs, color='#10b981' if risk_score < 30 else '#ef4444')
+    plt.title('Subatomic Entropy Vector')
+    plt.ylabel('Deviation %')
+    plt.tight_layout()
+    plt.savefig(chart_path, dpi=150, bbox_inches='tight')
+    plt.close()
 
     pdf = FPDF()
     pdf.add_page()
@@ -681,7 +696,16 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
         "intercellular transmission is highly probable, affecting surrounding vegetation within a 50m radius via airborne spore mechanics."
     )
     pdf.multi_cell(0, 7, q_text)
-    pdf.ln(5)
+    
+    # Insert Chart
+    if os.path.exists(chart_path):
+        # We estimate the position
+        y_pos = pdf.get_y() + 5
+        pdf.image(chart_path, x=15, y=y_pos, w=150)
+        pdf.ln(75) # skip past image
+        os.remove(chart_path) # Cleanup
+    else:
+        pdf.ln(5)
 
     # --- SECTION 3: 7-DAY TACTICAL ERADICATION PLAN ---
     pdf.set_font("Arial", 'B', 16)
