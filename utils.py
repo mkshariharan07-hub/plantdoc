@@ -151,131 +151,86 @@ DISEASE_INFO: dict[str, dict] = {
     },
     "spider_mites": {
         "severity": "medium",
-        "color":    "#f59e0b",
-        "tips":     "Arachnid infestation. Use Abamectin or Neem Oil. Increase humidity to deter spread.",
+        "severity": "low", "color": "#10b981",
+        "tips": "Specimen is optimal. Maintain current irrigation and UV regime. No remediation required.",
     },
-    "thrips": {
-        "severity": "medium",
-        "color":    "#f59e0b",
-        "tips":     "Silvering of leaves. Use Spinosad or Pyrethrin sprays. Install blue sticky traps.",
+    "productivity": {
+        "severity": "info", "color": "#10b981",
+        "tips": "To boost productivity: Optimize N-P-K ratios (10-10-10), ensure 6-8 hours of unfiltered sunlight, and implement mulch to stabilize soil thermal conductivity.",
     },
-    "early_blight": {
-        "severity": "medium",
-        "color":    "#f59e0b",
-        "tips":     "Alternaria pathogen detected. Remove lower leaves. Apply copper-based fungicide. Avoid soil splashing.",
+    "irrigation": {
+        "severity": "info", "color": "#10b981",
+        "tips": "Best practice: Drip irrigation. Root-zone watering prevents fungal spores on the canopy. Ideal timing: 05:00 - 08:00 Local Time.",
     },
-    "late_blight": {
-        "severity": "high",
-        "color":    "#ef4444",
-        "tips":     "Phytophthora infestans (High Risk). Isolate site. Apply mancozeb or chlorothalonil. Burn infected debris.",
+    "soil_health": {
+        "severity": "info", "color": "#10b981",
+        "tips": "Optimal pH: 6.2 - 6.8. Use biochar for structural aeration and compost tea for microbial diversity.",
     },
-    "leaf_mold": {
-        "severity": "medium",
-        "color":    "#f97316",
-        "tips":     "High humidity pathogen. Reduce ambient moisture. Apply calcium-based spray to strengthen cell walls.",
+    "growth_stunted": {
+        "severity": "medium", "color": "#f59e0b",
+        "tips": "Check for root-bound conditions or nitrogen lockout. Apply mycorrhizal fungi to enhance nutrient uptake.",
     },
-    "bacterial_spot": {
-        "severity": "high",
-        "color":    "#ef4444",
-        "tips":     "Xanthomonas bacteria. Use copper-based bactericide. Sterilize all tools. Avoid working in rain.",
+    "scab": {
+        "severity": "medium", "color": "#f59e0b",
+        "tips": "Fungal infection. Prune diseased tissue and apply sulfur-based fungicide. Increase inter-batch airflow.",
+    },
+    "blight": {
+        "severity": "high", "color": "#ef4444",
+        "tips": "Phytophthora/Alternaria suspected. Apply copper fungicide. Isolate infected zones. Avoid moisture on foliage.",
+    },
+    "mildew": {
+        "severity": "medium", "color": "#f59e0b",
+        "tips": "High humidity symptom. Use neem oil or potassium bicarbonate. Improve ventilation index.",
     },
     "rust": {
-        "severity": "medium",
-        "color":    "#f97316",
-        "tips":     "Pucciniaceae spores. Remove visible pustules. Apply triazole fungicide. Prevent overnight leaf wetness.",
+        "severity": "medium", "color": "#f97316",
+        "tips": "Pucciniaceae spores. Remove pustule-heavy leaves. Apply triazole fungicide immediately.",
     },
-    "powdery_mildew": {
-        "severity": "medium",
-        "color":    "#f59e0b",
-        "tips":     "Apply neem oil or potassium bicarbonate. Increase sunlight exposure and reduce plant density.",
-    },
-    "downy_mildew": {
-        "severity": "high",
-        "color":    "#ef4444",
-        "tips":     "Peronosporaceae detected. Use phosphorite acid or mancozeb. Critical: Reduce leaf surface moisture.",
-    },
-    "mosaic_virus": {
-        "severity": "critical",
-        "color":    "#ef4444",
-        "tips":     "Systemic viral infection. No chemical cure. Destroy plant and control aphid/whitefly vectors.",
-    },
-    "yellow_leaf_curl": {
-        "severity": "critical",
-        "color":    "#ef4444",
-        "tips":     "TYLCV Virus. Use reflective mulches. Isolate infected zones. No known cure for current cellular state.",
-    },
-    "black_rot": {
-        "severity": "high",
-        "color":    "#7f1d1d",
-        "tips":     "Guignardia bidwellii. Remove mummified berries/leaves. Apply captan or myclobutanil.",
-    },
-    "septoria": {
-        "severity": "medium",
-        "color":    "#d97706",
-        "tips":     "Septoria leaf spot. Apply chlorothalonil. Remove lower foliage to prevent soil-to-leaf transmission.",
-    },
-    "spider_mites": {
-        "severity": "medium",
-        "color":    "#f59e0b",
-        "tips":     "Pest infestation. Increase humidity locally. Use miticides or neem oil. Blast leaves with water.",
-    },
-    "aphids": {
-        "severity": "low",
-        "color":    "#10b981",
-        "tips":     "Sucking insects. Use insecticidal soap or introduce ladybugs. Check undersides of new growth.",
-    },
-    "nitrogen_deficiency": {
-        "severity": "medium",
-        "color":    "#f59e0b",
-        "tips":     "Nutrient imbalance. Apply high-nitrogen fertilizer (NPK 10-0-0). Check soil pH (ideal 6.0-7.0).",
-    },
-    "calcium_deficiency": {
-        "severity": "medium",
-        "color":    "#f59e0b",
-        "tips":     "Tip burn / Blossom end rot risk. Apply calcium nitrate or bone meal. Stabilize watering schedule.",
+    "virus": {
+        "severity": "critical", "color": "#ef4444",
+        "tips": "Systemic Viral Load. No cure. Burn/Destroy specimen to prevent vector (aphid/whitefly) spread.",
     },
 }
 
 FALLBACK_INFO = {
-    "severity": "unknown",
-    "color":    "#94a3b8",
-    "tips":     "Pathogen signature unrecognizable. Recommendation: Consult a certified agronomist with the high-res capture.",
+    "severity": "unknown", "color": "#94a3b8",
+    "tips": "Query outside direct diagnostic scope. Advice: Rephrase query focusing on specific symptoms or growth indicators.",
 }
 
-def get_disease_info(disease: str) -> dict:
+def get_disease_info(query_str: str) -> dict:
     """
-    Lookup disease metadata using a smarter keyword matching algorithm
-    to prevent 'wrong results' from simple substring matches.
+    Advanced 'Oracle' matching logic. Uses keyword weightings
+    to distinguish between 'How to grow' and 'What is this disease'.
     """
-    if not disease: return FALLBACK_INFO
-    query = disease.lower().replace("_", " ").strip()
+    if not query_str: return FALLBACK_INFO
+    q = query_str.lower().strip()
     
-    # Priority 1: Exact direct match
-    clean_query = query.replace(" ", "_")
-    if clean_query in DISEASE_INFO:
-        return DISEASE_INFO[clean_query]
+    # Priority Scoring
+    weights = {
+        "productivity": ["productivity", "enhance", "yield", "better", "output", "increase"],
+        "irrigation":   ["water", "irrigation", "drink", "drought", "dry"],
+        "soil_health":  ["soil", "dirt", "ph", "compost", "fertilizer", "nutrition"],
+        "blight":       ["blight", "spots", "rotting", "dying"],
+        "mildew":       ["white", "dust", "mildew", "mold", "fuzzy"],
+        "virus":        ["mosaic", "virus", "wrinkled", "yellowing"]
+    }
     
-    # Priority 2: Keyword overlap
-    best_match = None
+    best_key = None
     max_score = 0
-    q_words = set(query.split())
     
-    for k in DISEASE_INFO:
-        k_words = set(k.replace("_", " ").split())
-        overlap = q_words.intersection(k_words)
-        score = len(overlap)
+    for key, tokens in weights.items():
+        score = sum(1 for t in tokens if t in q)
         if score > max_score:
             max_score = score
-            best_match = DISEASE_INFO[k]
+            best_key = key
             
-    if best_match and max_score > 0:
-        return best_match
+    if best_key and max_score > 0:
+        return DISEASE_INFO.get(best_key, FALLBACK_INFO)
         
-    # Priority 3: Fallback substring
+    # Fallback substring match
     for k, v in DISEASE_INFO.items():
-        if k.replace("_", " ") in query or query in k.replace("_", " "):
-            return v
-            
+        if k in q.replace(" ", "_"): return v
+        
     return FALLBACK_INFO
 
 

@@ -124,8 +124,8 @@ def log_v9(v, p, r):
     try:
         conn = sqlite3.connect('plantpulse_diagnostics.db')
         c = conn.cursor()
-        c.execute("CREATE TABLE IF NOT EXISTS titan_ledger (id INTEGER PRIMARY KEY, ts TEXT, plant TEXT, path TEXT, risk REAL)")
-        c.execute("INSERT INTO titan_ledger (ts, plant, path, risk) VALUES (?,?,?,?)",
+        c.execute("CREATE TABLE IF NOT EXISTS titan_ledger_v9 (id INTEGER PRIMARY KEY, ts TEXT, plant TEXT, path TEXT, risk REAL)")
+        c.execute("INSERT INTO titan_ledger_v9 (ts, plant, path, risk) VALUES (?,?,?,?)",
                   (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), v, p, r))
         conn.commit()
         conn.close()
@@ -180,9 +180,9 @@ c_in, c_pre = st.columns([1,1], gap="large")
 
 with c_in:
     st.markdown("### 📥 Neural Bio-Inlet")
-    src = st.radio("Signal Source", ["Quantum Upload", "Optical Terminal"], horizontal=True)
+    src = st.radio("Signal Source", ["Quantum Ingestion", "Optical Terminal"], horizontal=True)
     img_bgr = None
-    if src == "Quantum Upload":
+    if src == "Quantum Ingestion":
         f = st.file_uploader("Select Multispectral Ingestion", type=["jpg","png","jpeg"])
         if f: img_bgr = decode_bytes_to_bgr(f.read())
     else:
@@ -226,10 +226,8 @@ if img_bgr is not None:
         
         is_h = "healthy" in pathogen.lower()
         if is_h:
-            # TRIGGER LEAF EFFECT
             st.markdown("<script>document.getElementById('leaves').style.display = 'block'; setTimeout(() => { document.getElementById('leaves').style.display = 'none'; }, 6000);</script>", unsafe_allow_html=True)
             if conf > 65: risk_score *= 0.3; risk_lvl = "LOW (Healthy Growth)"
-            st.success("✅ OPTIMAL VITALITY DETECTED")
 
         log_v9(variant, pathogen, risk_score)
         
