@@ -938,6 +938,7 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
         pdf.ln(3)
 
     def kv_row(label, value, bold_val=False):
+        pdf.set_x(10)
         pdf.set_font("Arial", 'B', 10)
         pdf.cell(65, 6, label + ":", border=0)
         pdf.set_font("Arial", 'B' if bold_val else '', 10)
