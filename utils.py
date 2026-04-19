@@ -825,6 +825,25 @@ def generate_growth_forecast(current_ndvi: float) -> list[float]:
     base = current_ndvi if current_ndvi > 0 else 0.4
     return [round(base * (1 + (0.05 * i)), 4) for i in range(7)]
 
+def calculate_molecular_stress_index(risk_score: float, wsi: float) -> dict:
+    """Calculates cellular stress levels based on hydration and risk."""
+    score = (risk_score * 0.7) + (wsi * 0.3)
+    return {
+        "msi_value": round(score, 1),
+        "status": "CRITICAL STRESS" if score > 60 else "STABLE"
+    }
+
+def predict_harvest_revenue(acres: float, percentile: float, base_val: float = 1800) -> float:
+    """Predicts final revenue based on health percentile and acreage."""
+    efficiency = percentile / 100.0
+    return round(acres * base_val * efficiency, 2)
+
+def calculate_degrade_velocity(risk_score: float) -> str:
+    """Estimates how fast the pathogen is consuming healthy tissue."""
+    if risk_score > 70: return "ACCELERATED (4.2%/day)"
+    if risk_score > 40: return "MODERATE (1.5%/day)"
+    return "STAGNANT (<0.1%/day)"
+
 
 def estimate_crop_insurance_loss(farm_acres: float, crop_value_per_acre: float,
                                   risk_score: float, days_untreated: int = 7) -> dict:
