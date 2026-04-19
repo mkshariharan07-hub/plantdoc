@@ -480,23 +480,20 @@ with st.sidebar:
             letter-spacing: 1px;
             text-transform: uppercase;
             margin-bottom: 10px;
-        '>👥 Project Team — IV B.Tech ECE</div>
+        '>&#128101; Project Team &mdash; IV B.Tech ECE</div>
 
-        <!-- Member 1 -->
         <div style='margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(16,185,129,0.1);'>
             <div style='font-size: 0.82rem; font-weight: 600; color: #f1f5f9;'>Sindhuja R</div>
             <div style='font-size: 0.72rem; color: #94a3b8; font-family: monospace;'>Reg No: 226004099</div>
             <div style='font-size: 0.72rem; color: #64748b; font-family: monospace;'>sindhujarajagopalan99@gmail.com</div>
         </div>
 
-        <!-- Member 2 -->
         <div style='margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(16,185,129,0.1);'>
             <div style='font-size: 0.82rem; font-weight: 600; color: #f1f5f9;'>Saraswathy R</div>
             <div style='font-size: 0.72rem; color: #94a3b8; font-family: monospace;'>Reg No: 226004092</div>
             <div style='font-size: 0.72rem; color: #64748b; font-family: monospace;'>saraswathyr1203@gmail.com</div>
         </div>
 
-        <!-- Member 3 -->
         <div>
             <div style='font-size: 0.82rem; font-weight: 600; color: #f1f5f9;'>U. Kiruthika</div>
             <div style='font-size: 0.72rem; color: #94a3b8; font-family: monospace;'>Reg No: 226004052</div>
