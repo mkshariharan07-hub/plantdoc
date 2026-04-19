@@ -463,6 +463,48 @@ with st.sidebar:
         except Exception as e:
             st.error(f"SQL Connection fault: {e}")
 
+    st.markdown("---")
+    st.markdown("""
+    <div style='
+        background: rgba(16,185,129,0.07);
+        border: 1px solid rgba(16,185,129,0.25);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-top: 4px;
+    '>
+        <div style='
+            font-family: Inter, sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #34d399;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        '>👥 Project Team — IV B.Tech ECE</div>
+
+        <!-- Member 1 -->
+        <div style='margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(16,185,129,0.1);'>
+            <div style='font-size: 0.82rem; font-weight: 600; color: #f1f5f9;'>Sindhuja R</div>
+            <div style='font-size: 0.72rem; color: #94a3b8; font-family: monospace;'>Reg No: 226004099</div>
+            <div style='font-size: 0.72rem; color: #64748b; font-family: monospace;'>sindhujarajagopalan99@gmail.com</div>
+        </div>
+
+        <!-- Member 2 -->
+        <div style='margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(16,185,129,0.1);'>
+            <div style='font-size: 0.82rem; font-weight: 600; color: #f1f5f9;'>Saraswathy R</div>
+            <div style='font-size: 0.72rem; color: #94a3b8; font-family: monospace;'>Reg No: 226004092</div>
+            <div style='font-size: 0.72rem; color: #64748b; font-family: monospace;'>saraswathyr1203@gmail.com</div>
+        </div>
+
+        <!-- Member 3 -->
+        <div>
+            <div style='font-size: 0.82rem; font-weight: 600; color: #f1f5f9;'>U. Kiruthika</div>
+            <div style='font-size: 0.72rem; color: #94a3b8; font-family: monospace;'>Reg No: 226004052</div>
+            <div style='font-size: 0.72rem; color: #64748b; font-family: monospace;'>udhayasuriyankiruthika@gmail.com</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 # ===============================
 # MAIN UI — HERO BANNER
 # ===============================
