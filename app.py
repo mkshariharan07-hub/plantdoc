@@ -43,90 +43,112 @@ st.markdown("""
 
 html, body, [class*="css"] { font-family:'Space Grotesk', sans-serif !important; }
 
-/* BACKGROUND */
+/* BACKGROUND - ENHANCED ZENITH GREEN */
 .stApp {
-    background: #020408 !important;
+    background: #010203 !important;
     background-image:
-        radial-gradient(ellipse at 15% 15%, rgba(34,197,94,.12) 0%, transparent 55%),
-        radial-gradient(ellipse at 85% 80%, rgba(16,185,129,.10) 0%, transparent 55%),
-        url('https://www.transparenttextures.com/patterns/carbon-fibre.png') !important;
+        radial-gradient(circle at 5% 5%, rgba(16,185,129,0.18) 0%, transparent 40%),
+        radial-gradient(circle at 95% 95%, rgba(52,211,153,0.15) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(6,78,59,0.08) 0%, transparent 60%),
+        url('https://www.transparenttextures.com/patterns/black-linen.png') !important;
 }
 
 /* HEADER */
 .title-zen {
-    font-family:'Syne',sans-serif; font-size:9rem; font-weight:800;
-    background: linear-gradient(135deg,#4ade80 0%,#10b981 50%,#059669 100%);
+    font-family:'Syne',sans-serif; font-size:9.5rem; font-weight:800;
+    background: linear-gradient(180deg,#ffffff 0%,#10b981 100%);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-    text-align:center; margin:0; letter-spacing:-10px; line-height:.85;
+    text-align:center; margin:0; letter-spacing:-12px; line-height:.8;
+    filter: drop-shadow(0 0 30px rgba(16,185,129,0.4));
 }
 .subtitle-zen {
-    font-family:'Michroma',sans-serif; font-size:.9rem; letter-spacing:14px;
-    color:#10b981; text-align:center; margin-top:14px; opacity:.7;
+    font-family:'Michroma',sans-serif; font-size:.8rem; letter-spacing:16px;
+    color:#34d399; text-align:center; margin-top:20px; opacity:.9;
+    text-shadow: 0 0 10px rgba(52,211,153,0.5);
 }
 
 /* GLASS CARDS */
 .gcard {
-    background:rgba(13,17,23,.92);
-    border:1.5px solid rgba(16,185,129,.35);
-    border-radius:48px; padding:52px;
-    backdrop-filter:blur(60px);
-    box-shadow:0 80px 220px -50px rgba(0,0,0,1), inset 0 1px 0 rgba(255,255,255,.04);
-    margin-bottom:44px;
-    transition:border-color .5s, box-shadow .5s;
+    background:rgba(8,12,18,.96);
+    border:2px solid rgba(16,185,129,.45);
+    border-radius:52px; padding:60px;
+    backdrop-filter:blur(80px);
+    box-shadow:0 100px 250px -40px rgba(0,0,0,1), 
+               inset 0 0 40px rgba(16,185,129,.05);
+    margin-bottom:50px;
+    transition:all .6s cubic-bezier(0.23, 1, 0.32, 1);
 }
-.gcard:hover { border-color:#22c55e; box-shadow:0 0 100px rgba(34,197,94,.15); }
+.gcard:hover { 
+    border-color:#34d399; 
+    box-shadow:0 0 120px rgba(16,185,129,.25);
+    transform: translateY(-5px);
+}
 
 /* NAMES */
 .plant-name {
-    font-family:'Syne',sans-serif; font-size:4.5rem; font-weight:800;
-    color:#fff; line-height:1; margin:0;
-    border-left:12px solid #10b981;
-    padding-left:28px;
-    text-shadow:0 0 40px rgba(16,185,129,.3);
+    font-family:'Syne',sans-serif; font-size:5rem; font-weight:800;
+    color:#fff; line-height:.95; margin:0;
+    background: linear-gradient(90deg, #10b981, #ffffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    padding-bottom: 10px;
 }
 .disease-name {
-    font-family:'Michroma',sans-serif; font-size:1.5rem; letter-spacing:3px;
-    margin-top:16px; padding:14px 28px; border-radius:16px; display:inline-block;
+    font-family:'Michroma',sans-serif; font-size:1.6rem; letter-spacing:4px;
+    margin-top:20px; padding:16px 32px; border-radius:20px; display:inline-block;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
-.dis-healthy { background:rgba(16,185,129,.15); color:#4ade80; border:1.5px solid #10b981; }
-.dis-infected { background:rgba(239,68,68,.15); color:#f87171; border:1.5px solid #ef4444; }
+.dis-healthy { background:rgba(16,185,129,.25); color:#a7f3d0; border:2px solid #34d399; }
+.dis-infected { background:rgba(239,68,68,.25); color:#fecaca; border:2px solid #ef4444; }
+
+/* SEVERITY BADGES */
+.sev-matrix {
+    display: flex; gap: 10px; margin-top: 25px;
+}
+.sev-bit {
+    flex: 1; height: 12px; border-radius: 6px; background: #1f2937;
+    position: relative; overflow: hidden;
+}
+.sev-bit.active { background: #10b981; box-shadow: 0 0 15px #10b981; }
+.sev-bit.critical { background: #ef4444; box-shadow: 0 0 15px #ef4444; }
 
 /* METRICS */
 .mbox {
-    background:rgba(0,0,0,.6); border:1px solid #1a3a2a;
-    border-radius:28px; padding:28px; text-align:center;
+    background:rgba(1,2,3,.8); border:1px solid #064e3b;
+    border-radius:32px; padding:32px; text-align:center;
+    transition: .3s;
 }
+.mbox:hover { border-color: #10b981; background: #020617; }
 .mval {
-    font-family:'JetBrains Mono',monospace; font-size:3.5rem;
-    font-weight:900; line-height:1;
+    font-family:'JetBrains Mono',monospace; font-size:3.8rem;
+    font-weight:900; line-height:1; letter-spacing: -2px;
 }
 .mlabel {
-    font-family:'Michroma',sans-serif; font-size:.65rem;
-    color:#4b5563; letter-spacing:4px; text-transform:uppercase; margin-bottom:6px;
+    font-family:'Michroma',sans-serif; font-size:.7rem;
+    color:#94a3b8; letter-spacing:5px; text-transform:uppercase; margin-bottom:10px;
 }
 
 /* REMEDY */
 .remedy-block {
-    background:linear-gradient(135deg,rgba(5,46,22,.8),rgba(1,2,4,.95));
-    border:2px solid #10b981; border-radius:32px; padding:36px;
-    font-size:1.2rem; line-height:1.8; color:#d1fae5;
-    box-shadow:inset 0 0 50px rgba(16,185,129,.08);
+    background:linear-gradient(135deg,rgba(6,78,59,.9),rgba(2,6,23,.98));
+    border:2px solid #34d399; border-radius:36px; padding:44px;
+    font-size:1.3rem; line-height:1.9; color:#f0fdf4;
+    box-shadow:inset 0 0 60px rgba(16,185,129,.1);
 }
-
-/* FEATURE CARDS */
-.feat-item {
-    background:rgba(0,0,0,.5);
-    border-left:5px solid #10b981; border-radius:16px;
-    padding:18px 22px; margin-bottom:16px;
-    transition:.3s;
-}
-.feat-item:hover { transform:translateX(8px); background:rgba(16,185,129,.06); }
 
 /* SCANNER */
-.scn-wrap { position:relative; border-radius:30px; overflow:hidden; border:2px solid #065f46; }
-.scn-line { position:absolute; width:100%; height:6px;
-    background:linear-gradient(transparent,#4ade80,transparent);
-    box-shadow:0 0 30px #22c55e; animation:scn 3.5s ease-in-out infinite; }
+.scn-wrap { 
+    position:relative; border-radius:40px; overflow:hidden; 
+    border:3px solid #065f46;
+    box-shadow: 0 0 40px rgba(16,185,129,0.2);
+}
+.scn-line { 
+    position:absolute; width:100%; height:10px;
+    background:linear-gradient(transparent, #34d399, transparent);
+    box-shadow:0 0 40px #10b981; 
+    animation:scn 3s ease-in-out infinite;
+    z-index: 10;
+}
 @keyframes scn { 0%,100%{top:0%} 50%{top:100%} }
 
 /* TICKER */
@@ -319,8 +341,18 @@ if img_bgr is not None:
             st.markdown(f"<p class='plant-name'>{plant_name.upper()}</p>", unsafe_allow_html=True)
             dis_cls = "dis-healthy" if is_healthy else "dis-infected"
             st.markdown(f"<div class='disease-name {dis_cls}'>"
-                        f"{'✅ HEALTHY SPECTRUM' if is_healthy else '⚠️ '+pathogen.upper()}"
+                        f"{'✅ HEALTHY SPECTRUM' if is_healthy else '⚠️ PATHOGEN: '+pathogen.upper()}"
                         f"</div>", unsafe_allow_html=True)
+            
+            # SEVERITY MATRIX
+            st.markdown("<div class='mlabel' style='margin-top:20px;'>Pathogen Severity Matrix</div>", unsafe_allow_html=True)
+            sev_bits = []
+            levels = ["Low", "Stable", "Warning", "Critical", "Lethal"]
+            for i in range(5):
+                active = "active" if (sev/20) >= i else ""
+                if i == 4 and sev > 80: active = "critical"
+                sev_bits.append(f"<div class='sev-bit {active}' title='{levels[i]}'></div>")
+            st.markdown(f"<div class='sev-matrix'>{''.join(sev_bits)}</div>", unsafe_allow_html=True)
 
             st.markdown("<br>", unsafe_allow_html=True)
 
@@ -328,9 +360,9 @@ if img_bgr is not None:
             m1, m2, m3, m4 = st.columns(4)
             metric_data = [
                 ("AI Confidence", f"{conf:.0f}%", "#4ade80"),
-                ("Severity Index", f"{sev}%", "#f87171"),
+                ("Pathogen Risk", f"{risk_score:.0f}%", "#f87171"),
                 ("Recovery Prob", f"{rec_prob:.0f}%", "#60a5fa"),
-                ("Quantum Risk", f"{risk_score:.1f}%", "#fbbf24"),
+                ("Stability Index", f"{100-sev:.0f}%", "#fbbf24"),
             ]
             for col, (label, val, color) in zip([m1,m2,m3,m4], metric_data):
                 col.markdown(f"""<div class='mbox'>
@@ -343,24 +375,22 @@ if img_bgr is not None:
             # BIO-STABILITY GAUGE
             gauge_color = get_health_gauge_color(sev)
             fig_g = go.Figure(go.Indicator(
-                mode="gauge+number+delta",
+                mode="gauge+number",
                 value=100 - sev,
-                delta={'reference': 80},
-                title={'text': "Bio-Stability Index", 'font': {'color': '#10b981', 'family': 'Michroma'}},
+                title={'text': "Molecular Integrity Index", 'font': {'color': '#10b981', 'family': 'Michroma', 'size': 14}},
                 gauge={
                     'axis': {'range': [0, 100], 'tickcolor': '#374151'},
                     'bar': {'color': gauge_color},
-                    'bgcolor': 'rgba(0,0,0,0)',
-                    'borderwidth': 0,
+                    'bgcolor': 'rgba(0,0,0,0.3)',
+                    'borderwidth': 2,
                     'steps': [
-                        {'range': [0, 40],  'color': 'rgba(239,68,68,.15)'},
-                        {'range': [40, 70], 'color': 'rgba(245,158,11,.1)'},
-                        {'range': [70, 100],'color': 'rgba(16,185,129,.1)'}
-                    ],
-                    'threshold': {'line': {'color': '#ffffff', 'width': 2}, 'thickness': .8, 'value': 100-sev}
+                        {'range': [0, 30],  'color': 'rgba(239,68,68,.2)'},
+                        {'range': [30, 70], 'color': 'rgba(245,158,11,.2)'},
+                        {'range': [70, 100],'color': 'rgba(16,185,129,.2)'}
+                    ]
                 }
             ))
-            fig_g.update_layout(height=230, margin=dict(l=20,r=20,t=50,b=0),
+            fig_g.update_layout(height=240, margin=dict(l=30,r=30,t=50,b=20),
                                  paper_bgcolor='rgba(0,0,0,0)', font_color='#9ca3af')
             st.plotly_chart(fig_g, use_container_width=True)
 
@@ -372,60 +402,66 @@ if img_bgr is not None:
 
             # PURCHASE LINKS
             if links:
-                st.markdown("<br><b>🛒 Direct Procurement</b>", unsafe_allow_html=True)
+                st.markdown("<br><b>🛒 Direct Procurement Database</b>", unsafe_allow_html=True)
                 lc = st.columns(len(links))
                 for i, lk in enumerate(links):
                     lc[i].markdown(
                         f"<a href='{lk['url']}' target='_blank' style='display:block;text-align:center;"
-                        f"background:#4ade80;color:#000;padding:14px;border-radius:16px;"
-                        f"text-decoration:none;font-weight:900;'>{lk['icon']} {lk['store']}</a>",
+                        f"background:rgba(16,185,129,0.1);color:#4ade80;padding:16px;border-radius:24px;"
+                        f"border:1px solid #10b981;text-decoration:none;font-weight:900;"
+                        f"transition:0.3s;'>{lk['icon']} {lk['store']}</a>",
                         unsafe_allow_html=True)
 
             st.markdown("---")
 
+            # ROI & LIFE EXPECTANCY
+            roi = compute_treatment_roi(risk_score)
+            
             # EXTENDED METRICS
             e1, e2 = st.columns(2)
             with e1:
                 st.markdown(f"""<div class='mbox'>
-                    <div class='mlabel'>Carbon Sequestration</div>
-                    <div class='mval' style='color:#34d399;font-size:2rem;'>{carbon} gCO₂/d</div>
+                    <div class='mlabel'>Predicted Crop Savings</div>
+                    <div class='mval' style='color:#34d399;font-size:2.5rem;'>${roi['crop_saved']:,.0f}</div>
                 </div>""", unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown(f"""<div class='mbox'>
-                    <div class='mlabel'>Biological Age</div>
-                    <div class='mval' style='color:#a78bfa;font-size:2rem;'>{bio_age} Days</div>
+                    <div class='mlabel'>ROI Yield Projection</div>
+                    <div class='mval' style='color:#fbbf24;font-size:2.5rem;'>{roi['roi_pct']}%</div>
                 </div>""", unsafe_allow_html=True)
             with e2:
                 st.markdown(f"""<div class='mbox'>
-                    <div class='mlabel'>Treatment Efficacy</div>
-                    <div class='mval' style='color:#60a5fa;font-size:2rem;'>{eff}%</div>
+                    <div class='mlabel'>Tissue Sustainability</div>
+                    <div class='mval' style='color:#60a5fa;font-size:2.5rem;'>{eff}% Success</div>
                 </div>""", unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown(f"""<div class='mbox'>
-                    <div class='mlabel'>Global Elite Rank</div>
-                    <div class='mval' style='color:#fbbf24;font-size:2rem;'>{rank['percentile']}%</div>
+                    <div class='mlabel'>Life Expectancy (Days)</div>
+                    <div class='mval' style='color:#ef4444;font-size:2.5rem;'>{roi['life_expectancy_days']}</div>
                 </div>""", unsafe_allow_html=True)
 
             st.markdown("---")
-            st.markdown(f"**Tissue Degradation Velocity:** `{vel}`")
-            st.markdown(f"**NPK Balance:** `N:{npk['n']}% | P:{npk['p']}% | K:{npk['k']}%`")
-            st.markdown(f"**Water Stress Index (WSI):** `{wsi:.3f}`")
-            st.markdown(f"**NDVI (Photosynthesis):** `{ndvi:.4f}`")
-            st.markdown(f"**Molecular Stress (MSI):** `{msi['msi_value']} — {msi['status']}`")
-            st.markdown(f"**Pathogen Risk Level:** `{r_lvl.upper()}`")
+            st.markdown(f"**Pathogen Spread Velocity:** `{vel}`")
+            st.markdown(f"**NPK Saturation Matrix:** `N:{npk['n']}% | P:{npk['p']}% | K:{npk['k']}%`")
+            st.markdown(f"**Photosynthetic Index (NDVI):** `{ndvi:.4f}`")
+            st.markdown(f"**Treatment Strategy Verdict:** <span style='color:#10b981;font-weight:900;'>{roi['verdict']}</span>", unsafe_allow_html=True)
 
             st.markdown("---")
             # DNA STAMP
             wiki_q = plant_name.replace(' ', '_')
-            st.markdown(f"📖 **[Ecological Knowledge Base → {plant_name} (Wikipedia)](https://en.wikipedia.org/wiki/{wiki_q})**")
+            st.markdown(f"📖 **[Advanced Ecological Knowledge Base → {plant_name}](https://en.wikipedia.org/wiki/{wiki_q})**")
 
             st.markdown("---")
             pdf_bytes = generate_pdf_report(plant_name, pathogen, conf, r_lvl,
-                                             treatment, risk_score, 100-risk_score, {}, 0, {})
+                                             treatment, risk_score, 100-sev, 
+                                             care_data={"roi": roi, "npk": npk}, 
+                                             necrotic_ratio=sev,
+                                             texture_data=compute_leaf_texture_score(img_bgr))
             st.download_button("📥 DOWNLOAD SUPREME ZENITH CLINICAL DOSSIER",
                                data=pdf_bytes,
-                               file_name=f"PlantDoc_Zenith_{plant_name.replace(' ','_')}.pdf",
-                               mime="application/pdf")
+                               file_name=f"PlantDoc_Zenith_Report.pdf",
+                               mime="application/pdf",
+                               use_container_width=True)
 
             st.markdown("</div>", unsafe_allow_html=True)
 
