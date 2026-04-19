@@ -900,15 +900,16 @@ def get_live_photoperiod(lat: float = 12.97, lon: float = 77.59) -> dict:
     except: pass
     return {"day_length": "12:00:00", "sunrise": "06:00:00", "sunset": "18:00:00"}
 
-def convert_currency(usd_val: float, target: str = "INR") -> float:
-    """Fetches live exchange rates (Keyless Fallback)."""
-    try:
-        url = f"https://open.er-api.com/v6/latest/USD"
-        resp = requests.get(url, timeout=5)
-        rates = resp.json().get("rates", {})
-        return round(usd_val * rates.get(target, 83.31), 2)
-    except:
-        return round(usd_val * 83.31, 2)
+def estimate_carbon_sequestration(ndvi: float, bio_age: int) -> float:
+    """Estimates grams of CO2 sequestered by the specimen."""
+    efficiency = max(0.1, ndvi)
+    return round(bio_age * efficiency * 0.42, 3)
+
+def get_health_gauge_color(sev: float) -> str:
+    """Returns CSS color for health gauge based on severity."""
+    if sev < 20: return "#10b981"
+    if sev < 50: return "#f59e0b"
+    return "#ef4444"
     """
     Computes estimated insurable crop loss using actuarial spread-velocity formula.
     Returns gross loss, insurance claimable amount (assuming 80% coverage), and net.
