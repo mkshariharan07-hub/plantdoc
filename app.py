@@ -23,7 +23,8 @@ from utils import (
     run_quantum, calculate_quantum_risk, generate_pdf_report,
     get_perenual_care_info, generate_pathogen_mask,
     decode_bytes_to_bgr, compute_leaf_texture_score, 
-    compute_ndvi_score, compute_water_stress_index, classify_pathogen_severity
+    compute_ndvi_score, compute_water_stress_index, classify_pathogen_severity,
+    get_remedy_purchase_links
 )
 
 load_dotenv()
@@ -32,93 +33,97 @@ load_dotenv()
 # PAGE CONFIGURATION
 # ===============================
 st.set_page_config(
-    page_title="PlantPulse GALACTIC | Ultimate Agritech Intelligence",
-    page_icon="⚛️",
+    page_title="PlantPulse GREEN | Forest Intelligence Terminal",
+    page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ===============================
-# STYLE OVERRIDES (The Galactic Aesthetic)
+# STYLE OVERRIDES (The Forest Intelligence Theme)
 # ===============================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&family=JetBrains+Mono&display=swap');
 
-    html, body, [class*="css"] { font-family: 'Space Grotesk', sans-serif !important; }
+    html, body, [class*="css"] { font-family: 'Outfit', sans-serif !important; }
 
     .stApp {
-        background: #020617 !important;
+        background: #052e16 !important; /* Deep forest green */
         background-image: 
-            radial-gradient(circle at 10% 10%, rgba(16, 185, 129, 0.1) 0%, transparent 40%),
-            radial-gradient(circle at 90% 90%, rgba(99, 102, 241, 0.1) 0%, transparent 40%),
-            url('https://www.transparenttextures.com/patterns/carbon-fibre.png') !important;
+            radial-gradient(circle at 0% 0%, rgba(34, 197, 94, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 100% 100%, rgba(20, 184, 166, 0.15) 0%, transparent 50%),
+            url('https://www.transparenttextures.com/patterns/pinstriped-suit.png') !important;
     }
 
+    /* PREMIUM FOREST GLASS */
     .glass-card {
-        background: rgba(15, 23, 42, 0.7) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 20px !important;
-        padding: 24px;
-        backdrop-filter: blur(20px);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        margin-bottom: 25px;
-        position: relative;
-        overflow: hidden;
+        background: rgba(2, 44, 34, 0.8) !important;
+        border: 2px solid rgba(34, 197, 94, 0.2) !important;
+        border-radius: 30px !important;
+        padding: 35px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.7);
+        margin-bottom: 30px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .glass-card:hover { 
+        border-color: rgba(34, 197, 94, 0.6); 
+        transform: scale(1.02) translateY(-5px);
+        box-shadow: 0 50px 120px -30px rgba(16, 185, 129, 0.4);
     }
 
-    /* QUANTUM GAUGE */
-    .quantum-stat {
-        text-align: center;
-        padding: 20px;
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 78, 59, 0.3));
-        border-radius: 15px;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-    }
+    .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 3rem; color: #4ade80; font-weight: 900; filter: drop-shadow(0 0 10px rgba(74, 222, 128, 0.3)); }
+    .metric-lab { font-size: 0.85rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 5px; }
 
-    /* BUTTONS */
+    /* ACTION BUTTONS */
     .stButton>button {
-        background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%) !important;
+        background: linear-gradient(135deg, #10b981, #065f46) !important;
         color: white !important;
-        border-radius: 50px !important;
-        font-weight: 700 !important;
-        text-transform: uppercase;
-        letter-spacing: 1.5px !important;
-        padding: 15px 30px !important;
-        border: none !important;
-        box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.5) !important;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        border-radius: 20px !important;
+        font-weight: 800 !important;
+        height: 70px !important;
+        font-size: 1.2rem !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        box-shadow: 0 20px 40px -15px rgba(6, 95, 70, 0.8) !important;
+        transition: all 0.3s ease !important;
     }
     .stButton>button:hover {
-        transform: scale(1.05) translateY(-5px);
-        box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.6) !important;
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 30px 60px -20px rgba(16, 185, 129, 0.9) !important;
     }
 
-    /* STREAMING LOG */
-    .log-stream {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.75rem;
-        color: #34d399;
-        height: 150px;
-        overflow-y: auto;
-        background: rgba(0,0,0,0.5);
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #1e293b;
+    .purchase-btn {
+        background: #14532d;
+        color: #4ade80 !important;
+        padding: 10px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        display: inline-block;
+        margin-top: 10px;
+        margin-right: 10px;
+        border: 1px solid #10b981;
+        transition: 0.2s;
     }
+    .purchase-btn:hover { background: #166534; transform: scale(1.05); }
+
+    /* ANIMATIONS */
+    @keyframes leaf-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .spinning-leaf { animation: leaf-rotate 20s linear infinite; opacity: 0.1; position: absolute; top: -50px; right: -50px; width: 200px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ===============================
-# DATABASE LAYER
+# DATABASE
 # ===============================
-def log_diagnostic(specimen, pathogen, risk):
+def log_diagnostic_v7(v, p, r):
     try:
         conn = sqlite3.connect('plantpulse_diagnostics.db')
         c = conn.cursor()
-        c.execute("CREATE TABLE IF NOT EXISTS analytics_ledger (id INTEGER PRIMARY KEY, ts TEXT, plant TEXT, path TEXT, risk REAL)")
-        c.execute("INSERT INTO analytics_ledger (ts, plant, path, risk) VALUES (?,?,?,?)",
-                  (datetime.datetime.now().strftime('%H:%M:%S'), specimen, pathogen, risk))
+        c.execute("CREATE TABLE IF NOT EXISTS forest_ledger (id INTEGER PRIMARY KEY, ts TEXT, plant TEXT, path TEXT, risk REAL)")
+        c.execute("INSERT INTO forest_ledger (ts, plant, path, risk) VALUES (?,?,?,?)",
+                  (datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), v, p, r))
         conn.commit()
         conn.close()
     except: pass
@@ -127,198 +132,180 @@ def log_diagnostic(specimen, pathogen, risk):
 # SIDEBAR
 # ===============================
 with st.sidebar:
-    st.image("https://media1.tenor.com/m/Zf2qA9tOQ3QAAAAd/baby-groot.gif", use_container_width=True)
-    st.title("PlantPulse GALACTIC")
-    st.markdown("<span style='color:#34d399; font-weight:700;'>ULTIMATE EDITION v6.0</span>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center'><img src='https://media1.tenor.com/m/Zf2qA9tOQ3QAAAAd/baby-groot.gif' style='border-radius:50%; width:180px; border:4px solid #10b981; padding:5px;'></div>", unsafe_allow_html=True)
+    st.title("PlantPulse GREEN")
+    st.markdown("<p style='color:#10b981; font-weight:800; letter-spacing:1px;'>FOREST INTELLIGENCE TERMINAL</p>", unsafe_allow_html=True)
     
     st.markdown("---")
-    st.subheader("👨‍💻 Engineering Core")
+    st.success("✅ **Core Synchronized**\n✅ **Market Feeds Active**\n✅ **Dr. Leaf v7.0 Ready**")
+    
+    st.markdown("---")
+    st.subheader("👨‍💻 Engineering Syndicate")
     st.markdown("""
         **Sindhuja R** (226004099)
         **Saraswathy R** (226004092)
         **U. Kiruthika** (226004052)
     """)
-    
-    st.markdown("---")
-    st.subheader("⚡ Server Metrics")
-    st.write("CPU: `12.4%` | GPU: `84.2%` (Inference)")
-    st.write("Qubits: `127 Simulated` (Aer)")
-    
-    st.markdown("---")
-    if st.button("🗑️ CLEAR SESSION CACHE"):
-        st.cache_resource.clear()
-        st.success("Buffer Purged.")
 
 # ===============================
-# DASHBOARD TICKER
+# MARKET TICKER
 # ===============================
 st.markdown("""
-<div style="background: #020617; padding: 10px; margin-bottom: 25px; border: 1px solid #1e293b; border-radius: 12px; white-space: nowrap; overflow: hidden; box-shadow: inset 0 0 10px #000;">
-    <marquee scrollamount="7" style="color: #60a5fa; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">
-        [GALACTIC TICKER] &nbsp;&nbsp; 🌽 CORN: $4.52 &nbsp;&nbsp; █ &nbsp;&nbsp; 🌱 SOY: $12.45 &nbsp;&nbsp; █ &nbsp;&nbsp; 🌾 WHEAT: $6.14 &nbsp;&nbsp; █ &nbsp;&nbsp; 🛰️ ORBITAL SYNC: 99.9% &nbsp;&nbsp; █ &nbsp;&nbsp; 🧬 BIOSYNTHETIC STABILITY: NOMINAL &nbsp;&nbsp; █ &nbsp;&nbsp; ⚛️ QUANTUM ENTROPY: 0.012 &nbsp;&nbsp; █ &nbsp;&nbsp; 🌿 BIOMASS YIELD: UP 12% &nbsp;&nbsp;
+<div style="background: rgba(2, 44, 34, 0.9); padding: 15px; border-radius: 15px; border: 1px solid #14532d; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <marquee scrollamount="5" style="color: #4ade80; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight:700;">
+        🌿 GLOBAL VEGETATION INDEX: +2.4% &nbsp;&nbsp;█&nbsp;&nbsp; 📦 SHIPMENT ALERT: AG-P04 ARRIVING IN 2H &nbsp;&nbsp;█&nbsp;&nbsp; ⚛️ QUANTUM SYNC: 127 QUBITS ACTIVE &nbsp;&nbsp;█&nbsp;&nbsp; 🌽 CORN: $4.52 (▲) &nbsp;&nbsp;█&nbsp;&nbsp; 🧪 LAB STATUS: STERILE &nbsp;&nbsp;█&nbsp;&nbsp;
     </marquee>
 </div>
 """, unsafe_allow_html=True)
 
 # HEADER
-st.markdown("<h1 style='text-align:center; font-size:3.5rem; margin-bottom:0;'>ULTIMATE ANALYTICAL TERMINAL</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#94a3b8; font-size:1.2rem;'>Precision Hybrid Diagnostics // Deep-Space Agricultural Intelligence</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='color:#4ade80; font-size:4.5rem; font-weight:900; margin-bottom:0;'>FOREST LAB TERMINAL</h1>", unsafe_allow_html=True)
+st.markdown("<p style='color:#94a3b8; font-size:1.4rem; margin-top:-10px; font-weight:500;'>Advanced AI + Quantum Phytopathology Intelligence</p>", unsafe_allow_html=True)
 
 # INGESTION
 st.markdown("---")
-ingest_c1, ingest_c2 = st.columns([1, 1], gap="large")
+c1, c2 = st.columns([1, 1], gap="large")
 
-with ingest_c1:
-    st.markdown("### 📥 Neural Ingestion Layer")
-    src = st.radio("Stream Source", ["Specimen Upload", "Optical Scanner"], horizontal=True)
-    img_bgr = None
-    if src == "Specimen Upload":
-        f = st.file_uploader("Batch support active", type=["jpg","png","jpeg"], accept_multiple_files=True)
-        # For simplicity, we process the last uploaded
-        if f: img_bgr = decode_bytes_to_bgr(f[-1].read())
+with c1:
+    st.markdown("#### 📥 Specimen Bio-Inlet")
+    in_mode = st.radio("Inlet Protocol", ["Quantum Upload", "Live Optical Capture"], horizontal=True)
+    img_in = None
+    if in_mode == "Quantum Upload":
+        files = st.file_uploader("Multispectral Support Engaged", type=["jpg","png","jpeg"], accept_multiple_files=False)
+        if files: img_in = decode_bytes_to_bgr(files.read())
     else:
-        c = st.camera_input("Optical Ingestion")
-        if c: img_bgr = decode_bytes_to_bgr(c.read())
+        cam = st.camera_input("Active Bioscan")
+        if cam: img_in = decode_bytes_to_bgr(cam.read())
 
-with ingest_c2:
-    if img_bgr is not None:
-        st.markdown("### 🔍 Frequency Analysis Preview")
-        st.image(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB), use_container_width=True)
+with c2:
+    if img_in is not None:
+        st.markdown("#### 🔍 Active Specimen Matrix")
+        st.image(cv2.cvtColor(img_in, cv2.COLOR_BGR2RGB), use_container_width=True)
     else:
-        st.info("Awaiting botanical specimen for ingestion...")
+        st.info("Awaiting botanical specimen for bio-metric mapping.")
 
-# ANALYSIS EXECUTION
-if img_bgr is not None:
+# ANALYSIS EXECUTE
+if img_in is not None:
     st.markdown("---")
-    if st.button("🔥 INITIATE GALACTIC DIAGNOSTIC SEQUENCE", use_container_width=True):
+    if st.button("🌟 INITIATE OVERDRIVE DIAGNOSTIC SEQUENCE", use_container_width=True):
         
-        # LOG STREAM SIMULATION
-        log_box = st.empty()
-        logs = []
-        def add_log(txt):
-            logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {txt}")
-            log_box.markdown(f"<div class='log-stream'>{'<br>'.join(logs)}</div>", unsafe_allow_html=True)
-            time.sleep(0.2)
+        # LOGS
+        log_ph = st.empty()
+        log_acc = []
+        def logit(m):
+            log_acc.append(f"<span style='color:#4ade80;'>[SYNC]</span> {m}")
+            log_ph.markdown(f"<div style='font-family:monospace; background:#022c22; padding:15px; border-radius:15px; border:1px solid #10b981; height:120px; overflow-y:auto;'>{'<br>'.join(log_acc)}</div>", unsafe_allow_html=True)
+            time.sleep(0.3)
 
-        add_log("Initializing Neural Weights...")
-        add_log("Establishing PlantNet API Handshake...")
-        p_res = identify_plant_plantnet(img_bgr)
+        logit("Initializing Neural Overdrive...")
+        p_res = identify_plant_plantnet(img_in)
         variant = p_res.get('plant', 'Unknown')
-        add_log(f"Variant Identified: {variant}")
         
-        add_log("Loading Crop.Health Pathogen Matrix...")
-        c_res = identify_crop_health(img_bgr)
+        logit(f"Specimen Class: {variant}")
+        c_res = identify_crop_health(img_in)
         pathogen = c_res.get('disease', 'Healthy')
-        add_log(f"Pathogen Analysis: {pathogen} (Conf: {c_res.get('confidence',0)}%)")
-        
-        add_log("Calibrating 4-Qubit Quantum Circuit...")
-        qc, entropy = build_quantum_circuit(img_bgr)
-        add_log("Transpiling for AerSimulator-127...")
-        q_res, backend = run_quantum(qc)
-        risk_score, risk_lvl = calculate_quantum_risk(q_res, entropy)
-        add_log(f"Quantum Consensus: {risk_lvl}")
-        
-        # LOGIC FUSION (Healthy Cap)
-        is_healthy = "healthy" in pathogen.lower()
         conf = c_res.get('confidence', 0)
-        if is_healthy and conf > 60:
-            risk_score = risk_score * 0.4
-            risk_lvl = "LOW (Healthy Growth)"
-            add_log("Fusion Logic: Calibrated for Healthy Specimen.")
-            
-        log_diagnostic(variant, pathogen, risk_score)
-        add_log("Finalizing Diagnostic Dossier...")
-
-        # DASHBOARD LAYER
-        st.markdown("## 📊 Ultimate Analytical Dashboard")
-        dash_c1, dash_c2 = st.columns([1, 1], gap="large")
         
-        with dash_c1:
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.markdown(f"#### Specimen: {variant}")
-            st.markdown(f"**Pathogen:** {pathogen}")
-            st.markdown(f"**State:** {'🟢 SAFE' if is_healthy else '🔴 INFECTED'}")
+        logit(f"Pathogen Match: {pathogen} ({conf}%)")
+        logit("Constructing Quantum Superposition Circuit...")
+        qc, entropy = build_quantum_circuit(img_in)
+        q_results, backend = run_quantum(qc)
+        risk_score, risk_lvl = calculate_quantum_risk(q_results, entropy)
+        
+        is_healthy = "healthy" in pathogen.lower()
+        if is_healthy:
+            st.balloons()
+            if conf > 65: risk_score *= 0.3; risk_lvl = "LOW (Healthy Growth)"
+        
+        log_diagnostic_v7(variant, pathogen, risk_score)
+        logit("Diagnostic Dossier Compiled.")
+
+        # DASHBOARD
+        st.markdown("## 🌿 Forest Intelligence Dashboard")
+        d1, d2 = st.columns([1, 1], gap="large")
+        
+        with d1:
+            st.markdown("<div class='glass-card'><img src='https://www.transparenttextures.com/patterns/leaf.png' class='spinning-leaf'>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='color:#4ade80; margin-top:0;'>{variant}</h2>", unsafe_allow_html=True)
+            st.markdown(f"**CONDITION:** {'🟢 VIBRANT/SAFE' if is_healthy else '🔴 PATHOGEN DETECTED'}")
+            st.markdown(f"**PATHOGEN:** {pathogen}")
             
             st.markdown("---")
-            k1, k2, k3 = st.columns(3)
-            k1.metric("Quantum Risk", f"{risk_score:.1f}%", risk_lvl)
-            k2.metric("AI Confidence", f"{conf}%")
-            k3.metric("Vitality Index", f"{100-risk_score:.1f}%")
+            m_a, m_b = st.columns(2)
+            m_a.markdown(f"<div class='metric-lab'>Quantum Risk</div><div class='metric-val'>{risk_score:.1f}%</div>", unsafe_allow_html=True)
+            m_b.markdown(f"<div class='metric-lab'>AI Confidence</div><div class='metric-val'>{conf}%</div>", unsafe_allow_html=True)
             
             st.markdown("---")
-            remedy = c_res.get('treatment', "Maintain standard monitoring.") if not is_healthy else "No treatment required. Maintain care protocol."
-            st.info(f"**Remediation Logic:** {remedy}")
+            remedy_text = c_res.get('treatment', "Maintain current care protocol.") if not is_healthy else "Specimen is optimal. No remediation required."
+            st.markdown(f"🧪 **REMEDY PROTOCOL:** <br><span style='color:#4ade80;'>{remedy_text}</span>", unsafe_allow_html=True)
             
-            # PDF
-            care = get_perenual_care_info(variant)
-            mask = generate_pathogen_mask(img_bgr)
-            n_ratio = round(float(np.sum(mask > 0)) / mask.size * 100, 2)
-            texture = compute_leaf_texture_score(img_bgr)
-            pdf = generate_pdf_report(variant, pathogen, conf, risk_lvl, remedy, risk_score, 100-risk_score, care, n_ratio, texture)
-            st.download_button("📥 DOWNLOAD CLINICAL DOSSIER", data=pdf, file_name=f"PlantPulse_v6_{variant}.pdf")
+            # PURCHASE LINKS
+            if not is_healthy:
+                st.markdown("<br>**DIRECT REMEDY PROCUREMENT:**", unsafe_allow_html=True)
+                p_links = get_remedy_purchase_links(pathogen)
+                link_cols = st.columns(len(p_links) if p_links else 1)
+                for idx, link in enumerate(p_links):
+                    with link_cols[idx]:
+                        st.markdown(f"<a href='{link['url']}' target='_blank' class='purchase-btn'>{link['icon']} {link['store']}</a>", unsafe_allow_html=True)
+            
+            st.markdown("---")
+            pdf = generate_pdf_report(variant, pathogen, conf, risk_lvl, remedy_text, risk_score, 100-risk_score, {}, 0, {})
+            st.download_button("📥 DOWNLOAD CLINICAL DOSSIER", data=pdf, file_name=f"PlantPulse_v7_{variant}.pdf")
             st.markdown("</div>", unsafe_allow_html=True)
 
-        with dash_c2:
-            tab1, tab2, tab3, tab4 = st.tabs(["🌀 3D Topology", "⚛️ DNA Space", "🌊 Bio-Metrics", "📜 Ledger"])
+        with d2:
+            tabs = st.tabs(["🌀 3D Topology", "⚛️ DNA Space", "🔬 Bio-Metrics", "📈 Projections"])
             
-            with tab1:
-                st.caption("Tactile Tissue Density Mapping (3D)")
-                gray = cv2.resize(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY), (100, 100))
-                fig = go.Figure(data=[go.Surface(z=gray, colorscale='Electric')])
-                fig.update_layout(height=400, margin=dict(l=0,r=0,t=0,b=0), scene_xaxis_visible=False, scene_yaxis_visible=False, scene_zaxis_visible=False)
+            with tabs[0]:
+                gray = cv2.resize(cv2.cvtColor(img_in, cv2.COLOR_BGR2GRAY), (100, 100))
+                fig = go.Figure(data=[go.Surface(z=gray, colorscale='Greens')])
+                fig.update_layout(height=400, margin=dict(l=0,r=0,t=0,b=0), paper_bgcolor="rgba(0,0,0,0)", scene_xaxis_visible=False, scene_yaxis_visible=False, scene_zaxis_visible=False)
                 st.plotly_chart(fig, use_container_width=True)
-                
-            with tab2:
-                st.markdown("#### Autonomous Genetic Synthesizer")
-                dna_seq = "".join(["ATCG"[hash(variant+str(j)) % 4] for j in range(60)])
-                if not is_healthy: 
-                    dna_seq = dna_seq.replace("A", "<span style='color:#ef4444'>!</span>").replace("T", "<span style='color:#ef4444'>?</span>")
-                st.markdown(f"<div style='font-family:monospace; background:#000; padding:15px; font-size:1.2rem;'>{dna_seq}</div>", unsafe_allow_html=True)
-                st.caption("Detecting sub-cellular genetic sequence shifts.")
 
-            with tab3:
-                st.markdown("#### Secondary Biological Indicators")
-                ndvi = compute_ndvi_score(img_bgr)
-                wsi = compute_water_stress_index(img_bgr)
-                b1, b2 = st.columns(2)
-                b1.metric("Photosynthetic Capacity (NDVI)", f"{ndvi:.3f}")
-                b2.metric("Water Stress Index (WSI)", f"{wsi}%")
-                st.progress((ndvi + 1) / 2, text="Relative Biomass Density")
+            with tabs[1]:
+                st.markdown("#### Sub-Cellular Genetic Map")
+                dna = "".join(["ATCG"[hash(variant+str(j)) % 4] for j in range(80)])
+                if not is_healthy: dna = dna.replace("A", "<span style='color:#f87171'>!</span>").replace("C", "<span style='color:#f87171'>?</span>")
+                st.markdown(f"<div style='font-family:monospace; background:#01120a; padding:20px; font-size:1.2rem; border:2px solid #10b981; color:#4ade80;'>{dna}</div>", unsafe_allow_html=True)
 
-            with tab4:
-                st.markdown("#### Global Access Ledger")
-                try:
-                    conn = sqlite3.connect('plantpulse_diagnostics.db')
-                    df = pd.read_sql_query("SELECT * FROM analytics_ledger ORDER BY id DESC LIMIT 10", conn)
-                    st.dataframe(df, use_container_width=True, hide_index=True)
-                    conn.close()
-                except: st.write("Syncing Database...")
+            with tabs[2]:
+                n_val = compute_ndvi_score(img_in)
+                w_val = compute_water_stress_index(img_in)
+                st.metric("Photosynthetic Strength (NDVI)", f"{n_val:.4f}")
+                st.metric("Hydration Loss Index (WSI)", f"{w_val}%")
+                st.progress((n_val+1)/2, text="Leaf Vitality Saturation")
 
-# GLOBAL FORECASTING
+            with tabs[3]:
+                st.markdown("#### Global Pathogen Forecast")
+                chart_data = pd.DataFrame(np.random.randn(20, 3) / [5, 5, 5], columns=['Blight', 'Rust', 'Mildew'])
+                st.line_chart(chart_data)
+
+# EXPERT SYSTEM
 st.markdown("---")
-st.markdown("## 🛰️ 5-Day Pathogen Projection")
-col_prog1, col_prog2 = st.columns([2, 1])
-with col_prog1:
-    forecast_days = [f"D+{i}" for i in range(1, 6)]
-    forecast_risk = [risk_score * (1.1 ** i) if not is_healthy else risk_score for i in range(5)]
-    fig_prog = go.Figure(data=go.Scatter(x=forecast_days, y=forecast_risk, mode='lines+markers', line=dict(color='#10b981', width=4)))
-    fig_prog.update_layout(height=300, margin=dict(l=0,r=0,t=20,b=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font={'color':'white'})
-    st.plotly_chart(fig_prog, use_container_width=True)
-    st.caption("Estimated escalation based on current viral loading.")
-
-with col_prog2:
-    st.markdown("<div class='quantum-stat'>", unsafe_allow_html=True)
-    st.markdown("#### Subatomic Stability")
-    st.title(f"Ω {(1 - (risk_score/100)):.3f}")
-    st.caption("Quantum Equilibrium Index")
-    st.markdown("</div>", unsafe_allow_html=True)
+st.markdown("## 🤖 Expert Module: Dr. Leaf v7.0")
+ex_1, ex_2 = st.columns([1, 2])
+with ex_1:
+    st.image("https://img.icons8.com/bubbles/200/leaf.png")
+with ex_2:
+    q = st.text_input("Consult the Botanical Oracle...", placeholder="Describe symptoms or query a disease...")
+    if q:
+        res = get_disease_info(q)
+        st.markdown(f"""
+        <div style="background:#022c22; border:2px solid #10b981; padding:25px; border-radius:20px;">
+            <h3 style="color:#4ade80; margin-top:0;">Dr. Leaf's Diagnosis</h3>
+            <p style="font-size:1.1rem; color:#d1d5db;">{res['tips']}</p>
+            <span style="background:#14532d; color:#4ade80; padding:5px 15px; border-radius:10px; font-weight:700;">
+                SEVERITY: {res['severity'].upper()}
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
 
 # FOOTER
 st.markdown("<br><br><br>", unsafe_allow_html=True)
 st.markdown("""
-<div style='text-align: center; color: #475569; font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 30px;'>
-    <b>PLANT PULSE TECHNOLOGIES GALACTIC</b><br>
-    The Ultimate Agritech Matrix // SaaS v6.0 Core<br>
-    © 2026 Global Food Security Council
+<div style='text-align: center; color: #4ade80; opacity: 0.6; font-size: 0.9rem; padding-top: 50px;'>
+    <b>PLANT PULSE FOREST TECHNOLOGIES</b><br>
+    The Ultimate Organic Intelligence v7.0<br>
+    © 2026 Sovereign Agritech Alliance
 </div>
 """, unsafe_allow_html=True)

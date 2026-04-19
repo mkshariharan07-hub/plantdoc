@@ -1,4 +1,4 @@
-﻿"""
+"""
 utils.py - PlantPulse Shared Utilities (v2.1)
 =======================================
 Single source of truth for:
@@ -142,99 +142,140 @@ DISEASE_INFO: dict[str, dict] = {
     "healthy": {
         "severity": "low",
         "color":    "#10b981",
-        "emoji":    "-",
-        "tips":     "No treatment needed. Maintain regular watering and sunlight.",
+        "tips":     "Target specimen is optimal. Maintain standard irrigation and UV exposure. No remediation required.",
+    },
+    "fusarium_wilt": {
+        "severity": "critical",
+        "color":    "#ef4444",
+        "tips":     "Soil-borne fungus. Drench soil with fungicides containing Myclobutanil. Sterilize planting area.",
+    },
+    "spider_mites": {
+        "severity": "medium",
+        "color":    "#f59e0b",
+        "tips":     "Arachnid infestation. Use Abamectin or Neem Oil. Increase humidity to deter spread.",
+    },
+    "thrips": {
+        "severity": "medium",
+        "color":    "#f59e0b",
+        "tips":     "Silvering of leaves. Use Spinosad or Pyrethrin sprays. Install blue sticky traps.",
     },
     "early_blight": {
         "severity": "medium",
         "color":    "#f59e0b",
-        "emoji":    "-",
-        "tips":     "Remove affected leaves. Apply copper-based fungicide. Avoid overhead watering.",
+        "tips":     "Alternaria pathogen detected. Remove lower leaves. Apply copper-based fungicide. Avoid soil splashing.",
     },
     "late_blight": {
         "severity": "high",
         "color":    "#ef4444",
-        "emoji":    "-",
-        "tips":     "Isolate plant immediately. Apply mancozeb or chlorothalonil. Destroy infected tissue.",
+        "tips":     "Phytophthora infestans (High Risk). Isolate site. Apply mancozeb or chlorothalonil. Burn infected debris.",
     },
     "leaf_mold": {
         "severity": "medium",
         "color":    "#f97316",
-        "emoji":    "-",
-        "tips":     "Improve air circulation. Apply fungicide. Reduce ambient humidity.",
+        "tips":     "High humidity pathogen. Reduce ambient moisture. Apply calcium-based spray to strengthen cell walls.",
     },
     "bacterial_spot": {
         "severity": "high",
         "color":    "#ef4444",
-        "emoji":    "-",
-        "tips":     "Use copper-based bactericide. Avoid working with wet plants.",
+        "tips":     "Xanthomonas bacteria. Use copper-based bactericide. Sterilize all tools. Avoid working in rain.",
     },
-    "common_rust": {
+    "rust": {
         "severity": "medium",
         "color":    "#f97316",
-        "emoji":    "-",
-        "tips":     "Apply triazole fungicide early. Rotate crops next season.",
-    },
-    "northern_leaf_blight": {
-        "severity": "high",
-        "color":    "#ef4444",
-        "emoji":    "-",
-        "tips":     "Apply fungicide at first sign. Use resistant varieties next cycle.",
-    },
-    "gray_leaf_spot": {
-        "severity": "medium",
-        "color":    "#f59e0b",
-        "emoji":    "-",
-        "tips":     "Improve drainage. Apply strobilurin fungicide preventively.",
+        "tips":     "Pucciniaceae spores. Remove visible pustules. Apply triazole fungicide. Prevent overnight leaf wetness.",
     },
     "powdery_mildew": {
         "severity": "medium",
         "color":    "#f59e0b",
-        "emoji":    "-",
-        "tips":     "Apply sulfur or potassium bicarbonate spray. Ensure good airflow.",
+        "tips":     "Apply neem oil or potassium bicarbonate. Increase sunlight exposure and reduce plant density.",
     },
-    "target_spot": {
-        "severity": "medium",
-        "color":    "#f97316",
-        "emoji":    "-",
-        "tips":     "Remove infected leaves. Apply chlorothalonil or mancozeb.",
+    "downy_mildew": {
+        "severity": "high",
+        "color":    "#ef4444",
+        "tips":     "Peronosporaceae detected. Use phosphorite acid or mancozeb. Critical: Reduce leaf surface moisture.",
     },
     "mosaic_virus": {
-        "severity": "high",
+        "severity": "critical",
         "color":    "#ef4444",
-        "emoji":    "-",
-        "tips":     "No cure - remove and destroy infected plants. Control aphid vectors.",
+        "tips":     "Systemic viral infection. No chemical cure. Destroy plant and control aphid/whitefly vectors.",
     },
-    "yellow_leaf_curl_virus": {
-        "severity": "high",
+    "yellow_leaf_curl": {
+        "severity": "critical",
         "color":    "#ef4444",
-        "emoji":    "-",
-        "tips":     "Remove infected plants. Use reflective mulches to deter whiteflies.",
+        "tips":     "TYLCV Virus. Use reflective mulches. Isolate infected zones. No known cure for current cellular state.",
+    },
+    "black_rot": {
+        "severity": "high",
+        "color":    "#7f1d1d",
+        "tips":     "Guignardia bidwellii. Remove mummified berries/leaves. Apply captan or myclobutanil.",
+    },
+    "septoria": {
+        "severity": "medium",
+        "color":    "#d97706",
+        "tips":     "Septoria leaf spot. Apply chlorothalonil. Remove lower foliage to prevent soil-to-leaf transmission.",
+    },
+    "spider_mites": {
+        "severity": "medium",
+        "color":    "#f59e0b",
+        "tips":     "Pest infestation. Increase humidity locally. Use miticides or neem oil. Blast leaves with water.",
+    },
+    "aphids": {
+        "severity": "low",
+        "color":    "#10b981",
+        "tips":     "Sucking insects. Use insecticidal soap or introduce ladybugs. Check undersides of new growth.",
+    },
+    "nitrogen_deficiency": {
+        "severity": "medium",
+        "color":    "#f59e0b",
+        "tips":     "Nutrient imbalance. Apply high-nitrogen fertilizer (NPK 10-0-0). Check soil pH (ideal 6.0-7.0).",
+    },
+    "calcium_deficiency": {
+        "severity": "medium",
+        "color":    "#f59e0b",
+        "tips":     "Tip burn / Blossom end rot risk. Apply calcium nitrate or bone meal. Stabilize watering schedule.",
     },
 }
 
 FALLBACK_INFO = {
-    "severity": "medium",
-    "color":    "#f59e0b",
-    "emoji":    "-",
-    "tips":     "Consult an agronomist for targeted treatment advice.",
+    "severity": "unknown",
+    "color":    "#94a3b8",
+    "tips":     "Pathogen signature unrecognizable. Recommendation: Consult a certified agronomist with the high-res capture.",
 }
-
 
 def get_disease_info(disease: str) -> dict:
     """
-    Lookup disease metadata by fuzzy key match.
-    Falls back gracefully if disease is unknown.
-
-    Args:
-        disease: Raw disease string (e.g. 'Early_blight', 'Late blight').
-    Returns:
-        Dict with keys: severity, color, emoji, tips.
+    Lookup disease metadata using a smarter keyword matching algorithm
+    to prevent 'wrong results' from simple substring matches.
     """
-    key = disease.lower().replace(" ", "_")
+    if not disease: return FALLBACK_INFO
+    query = disease.lower().replace("_", " ").strip()
+    
+    # Priority 1: Exact direct match
+    clean_query = query.replace(" ", "_")
+    if clean_query in DISEASE_INFO:
+        return DISEASE_INFO[clean_query]
+    
+    # Priority 2: Keyword overlap
+    best_match = None
+    max_score = 0
+    q_words = set(query.split())
+    
+    for k in DISEASE_INFO:
+        k_words = set(k.replace("_", " ").split())
+        overlap = q_words.intersection(k_words)
+        score = len(overlap)
+        if score > max_score:
+            max_score = score
+            best_match = DISEASE_INFO[k]
+            
+    if best_match and max_score > 0:
+        return best_match
+        
+    # Priority 3: Fallback substring
     for k, v in DISEASE_INFO.items():
-        if k in key or key in k:
+        if k.replace("_", " ") in query or query in k.replace("_", " "):
             return v
+            
     return FALLBACK_INFO
 
 
@@ -602,27 +643,41 @@ def get_remedy_purchase_links(disease_name: str) -> list[dict]:
     Generate professional purchase links for pesticides/remedies 
     based on the disease name.
     """
-    if "healthy" in disease_name.lower():
+    if not disease_name or "healthy" in disease_name.lower():
         return []
         
-    # Standardize search query
-    query = f"{disease_name} treatment pesticide antifungal".replace(" ", "+")
+    keyword = disease_name.lower().replace(" ", "+")
+    # Identify specific treatment keyword
+    remedy_map = {
+        "blight": "mancozeb+fungicide",
+        "mold": "chlorothalonil+fungicide",
+        "mildew": "sulfur+fungicide",
+        "rust": "triazole+fungicide",
+        "spot": "copper+fungicide",
+        "scab": "sulfur+spray",
+        "virus": "insecticidal+soap+aphid",
+        "mites": "abamectin+miticide",
+        "aphids": "neem+oil",
+        "wilt": "soil+fungicide",
+        "rot": "copper+fungicide"
+    }
     
+    treatment_query = "plant+fungicide"
+    for k, v in remedy_map.items():
+        if k in keyword:
+            treatment_query = v
+            break
+
     return [
         {
             "store": "Amazon",
-            "url": f"https://www.amazon.com/s?k={query}",
-            "icon": "-"
+            "url": f"https://www.amazon.com/s?k={treatment_query}+for+plants",
+            "icon": "🛒"
         },
         {
             "store": "Google Shopping",
-            "url": f"https://www.google.com/search?tbm=shop&q={query}",
-            "icon": "-"
-        },
-        {
-            "store": "Generic Search",
-            "url": f"https://www.google.com/search?q={query}+professional+remedy",
-            "icon": "-"
+            "url": f"https://www.google.com/search?tbm=shop&q={treatment_query}+for+farms",
+            "icon": "🔍"
         }
     ]
 
@@ -738,16 +793,36 @@ def classify_pathogen_severity(risk_score: float, necrotic_ratio: float) -> dict
     Returns a severity class, label, color hex, and recommended response time.
     """
     combined = (risk_score * 0.6) + (necrotic_ratio * 0.4)
-    if combined < 15:
-        return {"class": "S0", "label": "Subclinical", "color": "#10b981", "response": "72 hours", "priority": "LOW"}
-    elif combined < 30:
-        return {"class": "S1", "label": "Mild", "color": "#34d399", "response": "48 hours", "priority": "LOW-MODERATE"}
-    elif combined < 50:
-        return {"class": "S2", "label": "Moderate", "color": "#f59e0b", "response": "24 hours", "priority": "MODERATE"}
-    elif combined < 70:
-        return {"class": "S3", "label": "Severe", "color": "#f97316", "response": "12 hours", "priority": "HIGH"}
-    else:
-        return {"class": "S4", "label": "Critical/Systemic", "color": "#ef4444", "response": "IMMEDIATE", "priority": "CRITICAL"}
+def estimate_nitrogen_content(image) -> dict:
+    """
+    Estimates leaf nitrogen content based on G/R ratio and 
+    Dark Green Color Index (DGCI) simulation.
+    """
+    try:
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        h, s, v = cv2.split(hsv)
+        avg_h = np.mean(h)
+        # DGCI = [(H-60)/60 + (1-S) + (1-V)] / 3 (Simulated)
+        dgci = (avg_h / 180.0) # Simple proxy
+        nitrogen_pct = round(dgci * 4.5, 2)
+        return {
+            "nitrogen_pct": nitrogen_pct,
+            "status": "Optimal" if 3.0 < nitrogen_pct < 4.5 else "Deficient" if nitrogen_pct <= 3.0 else "Excessive"
+        }
+    except:
+        return {"nitrogen_pct": 0, "status": "Error"}
+
+def calculate_yield_impact(risk_score: float, disease_type: str) -> dict:
+    """
+    Predicts the potential impact on harvest yield based on 
+    pathogen severity and crop vitality.
+    """
+    multiplier = 1.5 if "blight" in disease_type.lower() else 1.2
+    potential_loss = min(100.0, risk_score * multiplier)
+    return {
+        "loss_pct": round(potential_loss, 2),
+        "harvest_ready": "Delayed" if potential_loss > 30 else "On Schedule"
+    }
 
 
 def estimate_crop_insurance_loss(farm_acres: float, crop_value_per_acre: float,
