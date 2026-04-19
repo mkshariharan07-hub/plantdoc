@@ -47,10 +47,28 @@ html, body, [class*="css"] { font-family:'Space Grotesk', sans-serif !important;
 .stApp {
     background: #010203 !important;
     background-image:
-        radial-gradient(circle at 5% 5%, rgba(16,185,129,0.18) 0%, transparent 40%),
-        radial-gradient(circle at 95% 95%, rgba(52,211,153,0.15) 0%, transparent 40%),
-        radial-gradient(circle at 50% 50%, rgba(6,78,59,0.08) 0%, transparent 60%),
-        url('https://www.transparenttextures.com/patterns/black-linen.png') !important;
+        radial-gradient(circle at 10% 10%, rgba(16,185,129,0.22) 0%, transparent 45%),
+        radial-gradient(circle at 90% 90%, rgba(52,211,153,0.18) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, rgba(6,78,59,0.12) 0%, transparent 70%),
+        url('https://www.transparenttextures.com/patterns/black-felt.png') !important;
+}
+
+/* PULSE ANIMATION */
+@keyframes bio-pulse {
+    0% { box-shadow: 0 0 50px rgba(16,185,129,0.1); }
+    50% { box-shadow: 0 0 100px rgba(16,185,129,0.25); }
+    100% { box-shadow: 0 0 50px rgba(16,185,129,0.1); }
+}
+
+/* CARDS */
+.gcard {
+    background:rgba(6,10,15,.97);
+    border:2px solid rgba(16,185,129,.55);
+    border-radius:60px; padding:70px;
+    backdrop-filter:blur(100px);
+    box-shadow:0 120px 300px -60px rgba(0,0,0,1);
+    margin-bottom:60px;
+    animation: bio-pulse 6s infinite ease-in-out;
 }
 
 /* HEADER */

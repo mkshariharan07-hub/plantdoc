@@ -998,19 +998,19 @@ def compute_treatment_roi(risk_score: float, farm_acres: float = 120,
     """
     Estimates the financial ROI of paying for treatment vs. leaving infection untreated.
     """
-    # Potential loss without treatment
     potential_loss = (risk_score / 100.0) * crop_value * farm_acres
-    # Assume treatment reduces risk by 85%
-    crop_saved     = potential_loss * 0.85
-    net_gain       = crop_saved - (treatment_cost * farm_acres)
-    roi_pct        = (net_gain / (treatment_cost * farm_acres)) * 100 if (treatment_cost * farm_acres) > 0 else 0
+    crop_saved     = potential_loss * 0.88
+    total_cost     = treatment_cost * farm_acres
+    net_gain       = crop_saved - total_cost
+    roi_pct        = (net_gain / total_cost) * 100 if total_cost > 0 else 0
     
     return {
         "crop_saved": round(crop_saved, 2),
-        "treatment_cost": round(treatment_cost, 2),
+        "treatment_cost": round(total_cost, 2),
         "net_gain": round(net_gain, 2),
         "roi_pct": round(roi_pct, 1),
-        "verdict": "TREAT" if roi_pct > 0 else "EVALUATE"
+        "verdict": "CRITICAL" if roi_pct > 300 else "STRATEGIC" if roi_pct > 100 else "MONITOR",
+        "life_expectancy_days": round(30 * (1 - risk_score/120.0), 1)
     }
 
 
@@ -1028,12 +1028,18 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
     import os
     import matplotlib.pyplot as plt
 
-    timestamp  = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    dossier_id = f"PP-{hash(disease + plant + str(risk_score)) % 999999:06d}-SEC"
+    timestamp  = datetime.datetime.now().strftime('%Y-%m-%d %I:%M %p')
+    dossier_id = f"PD-{hash(disease + plant + str(risk_score)) % 999999:06d}-SEC"
 
     # Pre-compute analytics
     severity     = classify_pathogen_severity(risk_score, necrotic_ratio)
-    roi_data     = compute_treatment_roi(risk_score)
+    
+    # Use provided ROI if passed, else compute
+    if care_data and "roi" in care_data:
+        roi_data = care_data["roi"]
+    else:
+        roi_data = compute_treatment_roi(risk_score)
+        
     yield_curve  = forecast_yield_loss_curve(risk_score)
     pesticides   = get_pesticide_compatibility(disease)
     usda_ok      = risk_score < 40
@@ -1155,7 +1161,7 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
     kv_row("Recommended Response Time", clean_txt(severity['response']))
     pdf.ln(3)
     pdf.multi_cell(0, 6, clean_txt(
-        f"This specimen was processed through the PlantDoc Hybrid AI + Quantum pipeline. "
+        f"This specimen was processed through the PlantDoc Clinical Hybrid AI + Quantum pipeline. "
         f"Cross-referencing PlantNet taxonomy, Kindwise Crop.Health pathogen intelligence, and a "
         f"4-qubit Qiskit entropy model produced a {confidence}% confidence match for '{disease}' "
         f"on '{plant}'. Severity class: {severity['class']} ({severity['label']}), requiring "
@@ -1211,7 +1217,7 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
             f"DAY 4 [MONITOR]:    Inspect treated zones. Record any new lesion emergence.\n"
             f"DAY 5 [REINFORCE]:  Reapply foliar treatment if expansion continues.\n"
             f"DAY 6 [SOIL DRENCH]: Apply systemic treatment to root zone if soil-borne pathogen.\n"
-            f"DAY 7 [VERIFY]:     Re-run PlantDoc Quantum Radar. Target: Risk Score < 15%."))
+            f"DAY 7 [VERIFY]:     Re-run PlantDoc Quantum Reconnaissance. Target: Risk < 10%."))
     pdf.ln(5)
 
     # Section 5: Pesticide Compatibility Table
@@ -1239,6 +1245,9 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
         kv_row("Watering Regime",   str(care_data.get('watering', 'N/A')).title())
         kv_row("Growth Cycle",      str(care_data.get('cycle', 'N/A')).title())
         kv_row("Care Level",        str(care_data.get('care_level', 'N/A')).upper())
+        if "npk" in care_data:
+            npk = care_data["npk"]
+            kv_row("NPK Profile", f"N:{npk['n']}% | P:{npk['p']}% | K:{npk['k']}%")
         desc = str(care_data.get('description', 'No description available.'))[:500]
         pdf.ln(2)
         pdf.multi_cell(0, 6, clean_txt(f"Botanical Description:\n{desc}"))
