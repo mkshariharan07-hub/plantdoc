@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 import cv2
 import numpy as np
 import os
@@ -31,7 +31,7 @@ load_dotenv()
 # ===============================
 st.set_page_config(
     page_title="PlantPulse AI | Quantum Botanical Intelligence",
-    page_icon="⚛️",
+    page_icon="-",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -106,12 +106,12 @@ with st.sidebar:
     st.markdown("<span style='color:#10b981; font-weight:700;'>QUANTUM EDITION</span>", unsafe_allow_html=True)
     
     st.markdown("---")
-    st.subheader("📊 Model Performance")
+    st.subheader("- Model Performance")
     st.metric("Accuracy", "96.4%", "+0.2%")
     st.metric("Latency", "240ms", "-15ms")
     
     st.markdown("---")
-    st.subheader("👨‍💻 Team")
+    st.subheader("- Team")
     st.markdown("""
         **Sindhuja R** (226004099)
         **Saraswathy R** (226004092)
@@ -124,7 +124,7 @@ with st.sidebar:
 st.markdown("""
 <div style="background: #020617; padding: 10px; margin-bottom: 25px; border: 1px solid #1e293b; border-radius: 8px; white-space: nowrap; overflow: hidden;">
     <marquee scrollamount="6" style="color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
-        [MARKET TICKER] &nbsp;&nbsp; 🌽 CORN: $4.50 (▲ 0.8%) &nbsp;&nbsp;█&nbsp;&nbsp; 🌱 SOY: $12.44 (▲ 1.2%) &nbsp;&nbsp;█&nbsp;&nbsp; 🌾 WHEAT: $6.12 (▼ 0.4%) &nbsp;&nbsp;█&nbsp;&nbsp; ⚛️ QUANTUM BACKEND: SYNCHRONIZED &nbsp;&nbsp; █ &nbsp;&nbsp; 🧬 AI MODEL v5.5: STABLE
+        [MARKET TICKER] &nbsp;&nbsp; - CORN: $4.50 (- 0.8%) &nbsp;&nbsp;-&nbsp;&nbsp; - SOY: $12.44 (- 1.2%) &nbsp;&nbsp;-&nbsp;&nbsp; - WHEAT: $6.12 (- 0.4%) &nbsp;&nbsp;-&nbsp;&nbsp; - QUANTUM BACKEND: SYNCHRONIZED &nbsp;&nbsp; - &nbsp;&nbsp; - AI MODEL v5.5: STABLE
     </marquee>
 </div>
 """, unsafe_allow_html=True)
@@ -137,7 +137,7 @@ st.markdown("---")
 col_input, col_preview = st.columns([1, 1], gap="large")
 
 with col_input:
-    st.markdown("### 📥 Specimen Ingestion")
+    st.markdown("### - Specimen Ingestion")
     input_tab = st.radio("Source", ["File Upload", "Camera"], horizontal=True)
     img_bgr = None
     if input_tab == "File Upload":
@@ -149,7 +149,7 @@ with col_input:
 
 with col_preview:
     if img_bgr is not None:
-        st.markdown("### 🔍 Specimen Preview")
+        st.markdown("### - Specimen Preview")
         st.image(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB), use_container_width=True)
     else:
         st.info("Awaiting specimen ingestion...")
@@ -157,7 +157,7 @@ with col_preview:
 # ANALYSIS
 if img_bgr is not None:
     st.markdown("---")
-    if st.button("🔥 EXECUTE HYBRID QUANTUM PIPELINE"):
+    if st.button("- EXECUTE HYBRID QUANTUM PIPELINE"):
         
         with st.status("Analyzing...", expanded=True) as status:
             # 1. AI
@@ -177,16 +177,30 @@ if img_bgr is not None:
         # DASHBOARD
         dash_c1, dash_c2 = st.columns([1, 1])
         
+        # Intelligent Logic Adjustments
+        is_healthy = "healthy" in pathogen.lower()
+        confidence_val = c_res.get('confidence', 0)
+        remedy_val = c_res.get('treatment', 'N/A')
+        
+        # Override for healthy plants
+        if is_healthy:
+            if remedy_val == 'N/A':
+                remedy_val = "No treatment required. Maintain standard hydration and sunlight."
+            # Scale quantum risk down if AI is highly confident of health
+            if confidence_val > 70:
+                risk_score = risk_score * 0.5
+                risk_lvl = "LOW (Healthy Growth)"
+
         with dash_c1:
             st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
             st.markdown(f"#### Identified: {variant}")
-            st.markdown(f"**Condition:** {'🔴 Infected' if 'healthy' not in pathogen.lower() else '🟢 Healthy'}")
+            st.markdown(f"**Condition:** {'- Healthy' if is_healthy else '- Infected'}")
             st.markdown(f"**Pathogen:** {pathogen}")
             st.markdown("---")
             k1, k2 = st.columns(2)
-            k1.metric("Quantum Risk", f"{risk_score}%", risk_lvl, delta_color="inverse")
-            k2.metric("AI Confidence", f"{c_res.get('confidence',0)}%")
-            st.markdown(f"**Remedy:** {c_res.get('treatment', 'N/A')}")
+            k1.metric("Quantum Risk", f"{risk_score:.1f}%", risk_lvl, delta_color="inverse")
+            k2.metric("AI Confidence", f"{confidence_val}%")
+            st.markdown(f"**Remedy:** {remedy_val}")
             st.markdown("</div>", unsafe_allow_html=True)
             
             # PDF Download
@@ -194,11 +208,11 @@ if img_bgr is not None:
             mask = generate_pathogen_mask(img_bgr)
             n_ratio = round(float(np.sum(mask > 0)) / mask.size * 100, 2)
             texture = compute_leaf_texture_score(img_bgr)
-            pdf = generate_pdf_report(variant, pathogen, c_res.get('confidence',0), risk_lvl, c_res.get('treatment',''), risk_score, 100-risk_score, care, n_ratio, texture)
-            st.download_button("📥 Download Clinical Dossier", data=pdf, file_name=f"Report_{variant}.pdf")
+            pdf = generate_pdf_report(variant, pathogen, confidence_val, risk_lvl, remedy_val, risk_score, 100-risk_score, care, n_ratio, texture)
+            st.download_button("- Download Clinical Dossier", data=pdf, file_name=f"Report_{variant}.pdf")
 
         with dash_c2:
-            tabs = st.tabs(["🌀 3D Topology", "⚛️ DNA Synth", "🌍 Threat Map", "📊 History"])
+            tabs = st.tabs(["- 3D Topology", "- DNA Synth", "- Threat Map", "- History"])
             
             with tabs[0]:
                 gray = cv2.resize(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY), (80, 80))
@@ -228,7 +242,7 @@ if img_bgr is not None:
 
 # GLOBAL ANALYTICS
 st.markdown("---")
-st.markdown("## 📈 Macro Analytics")
+st.markdown("## - Macro Analytics")
 m_c1, m_c2 = st.columns(2)
 with m_c1:
     idx = st.slider("Resistance Index (%)", 0, 100, 42)
@@ -243,7 +257,7 @@ with m_c2:
 st.markdown("<br><br><br>", unsafe_allow_html=True)
 st.markdown("""
 <div style='text-align: center; color: #475569; font-size: 0.8rem;'>
-    PLANT PULSE AI — ULTIMATE EDITION<br>
-    © 2026 Global Botanical Analytics Network
+    PLANT PULSE AI - ULTIMATE EDITION<br>
+    - 2026 Global Botanical Analytics Network
 </div>
 """, unsafe_allow_html=True)

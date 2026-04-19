@@ -1,11 +1,11 @@
-"""
-utils.py — PlantPulse Shared Utilities (v2.1)
+﻿"""
+utils.py - PlantPulse Shared Utilities (v2.1)
 =======================================
 Single source of truth for:
-  • Feature extraction  (used by main.py, app.py, server.py)
-  • Artifact paths
-  • Disease knowledge base
-  • Image decoding helpers
+  - Feature extraction  (used by main.py, app.py, server.py)
+  - Artifact paths
+  - Disease knowledge base
+  - Image decoding helpers
 
 RULE: Any change to extract_features() is made HERE only.
       All other files import from this module.
@@ -25,21 +25,21 @@ from qiskit_ibm_runtime import QiskitRuntimeService, Sampler
 # Load environment variables
 load_dotenv()
 
-# ── Artifact paths (one place to change if you move files) ────────────────────
+# - Artifact paths (one place to change if you move files) -
 MODEL_PATH  = "plant_model.pkl"
 SCALER_PATH = "plant_scaler.pkl"
 REPORT_PATH = "training_report.txt"
 IMG_SIZE    = (129, 129)
 
 # Feature-space identifiers
-FEATURE_MODE_RAW  = "raw_pixels"    # 129×129×3 = 49923 dims
+FEATURE_MODE_RAW  = "raw_pixels"    # 129--129--3 = 49923 dims
 FEATURE_MODE_HIST = "histogram"     # 63 dims
 RAW_PIXEL_DIM     = 129 * 129 * 3  # = 49923
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 # FEATURE EXTRACTION
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 def extract_features(img: np.ndarray) -> np.ndarray:
     """
     Deterministic, normalized feature vector (63 dims).
@@ -49,7 +49,7 @@ def extract_features(img: np.ndarray) -> np.ndarray:
     img_std = cv2.resize(img, IMG_SIZE)
     hsv     = cv2.cvtColor(img_std, cv2.COLOR_BGR2HSV)
 
-    # 2. Color histograms — normalized to sum to 1
+    # 2. Color histograms - normalized to sum to 1
     h_hist = cv2.calcHist([hsv], [0], None, [24], [0, 180]).flatten()
     s_hist = cv2.calcHist([hsv], [1], None, [16], [0, 256]).flatten()
     v_hist = cv2.calcHist([hsv], [2], None, [16], [0, 256]).flatten()
@@ -75,7 +75,7 @@ FEATURE_DIM = len(extract_features(np.zeros((8, 8, 3), dtype=np.uint8)))  # = 63
 
 def extract_features_raw(img: np.ndarray) -> np.ndarray:
     """
-    Legacy extractor — raw pixel flatten (128×128×3 = 49152 dims).
+    Legacy extractor - raw pixel flatten (128--128--3 = 49152 dims).
     CRITICAL: Now normalizes to 0-1 to fix 'wrong results' error.
     """
     resized = cv2.resize(img, IMG_SIZE).astype(np.float64) / 255.0
@@ -87,8 +87,8 @@ def get_feature_mode(model) -> str:
     Inspect a loaded model and return which feature extractor it was trained with.
 
     Returns:
-        'raw_pixels'  — model.n_features_in_ == 49152  (old pipeline)
-        'histogram'   — model.n_features_in_ == 63     (new pipeline)
+        'raw_pixels'  - model.n_features_in_ == 49152  (old pipeline)
+        'histogram'   - model.n_features_in_ == 63     (new pipeline)
 
     Raises:
         ValueError if the feature count is unrecognised.
@@ -115,12 +115,12 @@ def extract_for_model(img: np.ndarray, model) -> np.ndarray:
     return extract_features_raw(img).reshape(1, -1)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 # IMAGE DECODING
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 def decode_bytes_to_bgr(raw_bytes: bytes) -> Optional[np.ndarray]:
     """
-    Decode raw image bytes → BGR ndarray.
+    Decode raw image bytes - BGR ndarray.
     Returns None if bytes are empty or decoding fails.
     """
     if not raw_bytes:
@@ -131,84 +131,84 @@ def decode_bytes_to_bgr(raw_bytes: bytes) -> Optional[np.ndarray]:
 
 
 def decode_file_to_bgr(path: str) -> Optional[np.ndarray]:
-    """Read an image file from disk → BGR ndarray."""
+    """Read an image file from disk - BGR ndarray."""
     return cv2.imread(path, cv2.IMREAD_COLOR)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 # DISEASE KNOWLEDGE BASE
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 DISEASE_INFO: dict[str, dict] = {
     "healthy": {
         "severity": "low",
         "color":    "#10b981",
-        "emoji":    "🌱",
+        "emoji":    "-",
         "tips":     "No treatment needed. Maintain regular watering and sunlight.",
     },
     "early_blight": {
         "severity": "medium",
         "color":    "#f59e0b",
-        "emoji":    "🟡",
+        "emoji":    "-",
         "tips":     "Remove affected leaves. Apply copper-based fungicide. Avoid overhead watering.",
     },
     "late_blight": {
         "severity": "high",
         "color":    "#ef4444",
-        "emoji":    "🔴",
+        "emoji":    "-",
         "tips":     "Isolate plant immediately. Apply mancozeb or chlorothalonil. Destroy infected tissue.",
     },
     "leaf_mold": {
         "severity": "medium",
         "color":    "#f97316",
-        "emoji":    "🟠",
+        "emoji":    "-",
         "tips":     "Improve air circulation. Apply fungicide. Reduce ambient humidity.",
     },
     "bacterial_spot": {
         "severity": "high",
         "color":    "#ef4444",
-        "emoji":    "🔴",
+        "emoji":    "-",
         "tips":     "Use copper-based bactericide. Avoid working with wet plants.",
     },
     "common_rust": {
         "severity": "medium",
         "color":    "#f97316",
-        "emoji":    "🟠",
+        "emoji":    "-",
         "tips":     "Apply triazole fungicide early. Rotate crops next season.",
     },
     "northern_leaf_blight": {
         "severity": "high",
         "color":    "#ef4444",
-        "emoji":    "🔴",
+        "emoji":    "-",
         "tips":     "Apply fungicide at first sign. Use resistant varieties next cycle.",
     },
     "gray_leaf_spot": {
         "severity": "medium",
         "color":    "#f59e0b",
-        "emoji":    "🟡",
+        "emoji":    "-",
         "tips":     "Improve drainage. Apply strobilurin fungicide preventively.",
     },
     "powdery_mildew": {
         "severity": "medium",
         "color":    "#f59e0b",
-        "emoji":    "🟡",
+        "emoji":    "-",
         "tips":     "Apply sulfur or potassium bicarbonate spray. Ensure good airflow.",
     },
     "target_spot": {
         "severity": "medium",
         "color":    "#f97316",
-        "emoji":    "🟠",
+        "emoji":    "-",
         "tips":     "Remove infected leaves. Apply chlorothalonil or mancozeb.",
     },
     "mosaic_virus": {
         "severity": "high",
         "color":    "#ef4444",
-        "emoji":    "🔴",
-        "tips":     "No cure — remove and destroy infected plants. Control aphid vectors.",
+        "emoji":    "-",
+        "tips":     "No cure - remove and destroy infected plants. Control aphid vectors.",
     },
     "yellow_leaf_curl_virus": {
         "severity": "high",
         "color":    "#ef4444",
-        "emoji":    "🔴",
+        "emoji":    "-",
         "tips":     "Remove infected plants. Use reflective mulches to deter whiteflies.",
     },
 }
@@ -216,7 +216,7 @@ DISEASE_INFO: dict[str, dict] = {
 FALLBACK_INFO = {
     "severity": "medium",
     "color":    "#f59e0b",
-    "emoji":    "⚠️",
+    "emoji":    "-",
     "tips":     "Consult an agronomist for targeted treatment advice.",
 }
 
@@ -238,9 +238,9 @@ def get_disease_info(disease: str) -> dict:
     return FALLBACK_INFO
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 # ARTIFACT LOADING HELPERS
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 def load_model_and_scaler():
     """
     Load plant_model.pkl and plant_scaler.pkl from disk.
@@ -267,7 +267,7 @@ def predict_image(img_bgr: np.ndarray, model, scaler=None) -> dict:
         plant, disease, confidence, prediction_raw, top5,
         severity, tips, color, emoji, feature_mode
     """
-    # ── Auto-detect feature space ────────────────────────────────────────────
+    # - Auto-detect feature space -
     mode     = get_feature_mode(model)
     features = extract_for_model(img_bgr, model)
 
@@ -307,15 +307,15 @@ def predict_image(img_bgr: np.ndarray, model, scaler=None) -> dict:
     }
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 # QUANTUM LOGIC
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 def build_quantum_circuit(img: np.ndarray) -> tuple[QuantumCircuit, float]:
     """
     Richer 4-qubit circuit encoding:
-      Q0 — mean brightness gate
-      Q1 — edge density gate
-      Q2-Q3 — entanglement for consensus measurement
+      Q0 - mean brightness gate
+      Q1 - edge density gate
+      Q2-Q3 - entanglement for consensus measurement
     Returns (circuit, entropy_score).
     """
     # Resize for quick quantum simulation bottleneck
@@ -328,7 +328,7 @@ def build_quantum_circuit(img: np.ndarray) -> tuple[QuantumCircuit, float]:
     # Shannon entropy on histogram
     hist, _ = np.histogram(gray, bins=32, range=(0, 1))
     hist    = hist / (hist.sum() + 1e-7)
-    entropy = float(-np.sum(hist * np.log2(hist + 1e-9)))  # 0–5 scale
+    entropy = float(-np.sum(hist * np.log2(hist + 1e-9)))  # 0-5 scale
     entropy_norm = min(entropy / 5.0, 1.0)
 
     qc = QuantumCircuit(4, 4)
@@ -395,13 +395,14 @@ def calculate_quantum_risk(counts: dict, entropy: float) -> tuple[float, str]:
     # ones_ratio: bits with value '1' (out of 4 bits)
     ones_ratio = dominant_state.count("1") / len(dominant_state)
     
-    # Risk Score logic: (ones_ratio * 0.7 + entropy * 0.3) * 100
-    risk_score = (ones_ratio * 0.7 + entropy * 0.3) * 100
-    risk_score = min(max(risk_score, 0), 100)
+    # Risk Score logic: (ones_ratio * 0.8 + entropy * 0.2) * 100
+    # Higher ones_ratio is a stronger indicator of tissue failure than pure entropy.
+    risk_score = (ones_ratio * 0.8 + entropy * 0.2) * 100
+    risk_score = min(max(risk_score, 0.0), 100.0)
     
-    if risk_score > 75:
+    if risk_score > 80:
         level = "CRITICAL (Immediate Action Required)"
-    elif risk_score > 45:
+    elif risk_score > 55:
         level = "MODERATE (Monitor Closely)"
     else:
         level = "LOW (Healthy Growth)"
@@ -409,9 +410,9 @@ def calculate_quantum_risk(counts: dict, entropy: float) -> tuple[float, str]:
     return round(risk_score, 1), level
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 # EXTERNAL API INTEGRATIONS
-# ═══════════════════════════════════════════════════════════════════════════════
+# -
 def identify_plant_plantnet(img_bgr: np.ndarray) -> dict:
     """
     Call Pl@ntNet API for professional species identification.
@@ -611,17 +612,17 @@ def get_remedy_purchase_links(disease_name: str) -> list[dict]:
         {
             "store": "Amazon",
             "url": f"https://www.amazon.com/s?k={query}",
-            "icon": "📦"
+            "icon": "-"
         },
         {
             "store": "Google Shopping",
             "url": f"https://www.google.com/search?tbm=shop&q={query}",
-            "icon": "🛍️"
+            "icon": "-"
         },
         {
             "store": "Generic Search",
             "url": f"https://www.google.com/search?q={query}+professional+remedy",
-            "icon": "🔍"
+            "icon": "-"
         }
     ]
 
@@ -812,7 +813,7 @@ def compute_leaf_texture_score(image) -> dict:
     """
     try:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        # Laplacian variance — measures roughness/blur
+        # Laplacian variance - measures roughness/blur
         lap_var = float(cv2.Laplacian(gray, cv2.CV_64F).var())
         # Edge density
         edges = cv2.Canny(gray, 50, 150)
@@ -938,12 +939,19 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
         pdf.set_font("Arial", '', 10)
         pdf.ln(3)
 
+    def clean_txt(text):
+        """Sanitize text for standard FPDF fonts (Latin-1)."""
+        if not text: return ""
+        # Replace em-dashes and special quotes, remove non-latin-1
+        text = str(text).replace("-", "-").replace("-", "-").replace('"', '"').replace('"', '"')
+        return text.encode('latin-1', 'ignore').decode('latin-1')
+
     def kv_row(label, value, bold_val=False):
         pdf.set_x(10)
         pdf.set_font("Arial", 'B', 10)
         pdf.cell(65, 6, label + ":", border=0)
         pdf.set_font("Arial", 'B' if bold_val else '', 10)
-        pdf.multi_cell(0, 6, str(value))
+        pdf.multi_cell(0, 6, clean_txt(value))
 
     # PAGE 1
     pdf.add_page()
@@ -964,10 +972,10 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
     # Section 1: Executive Summary
     section_header("EXECUTIVE INTELLIGENCE SUMMARY", 1)
     kv_row("Specimen Variant", plant)
-    kv_row("Pathogen Identified", disease)
+    kv_row("Pathogen Identified", clean_txt(disease))
     kv_row("AI Confidence", f"{confidence}%")
-    kv_row("Severity Classification", f"{severity['class']} — {severity['label']} ({severity['priority']})")
-    kv_row("Recommended Response Time", severity['response'])
+    kv_row("Severity Classification", clean_txt(f"{severity['class']} - {severity['label']} ({severity['priority']})"))
+    kv_row("Recommended Response Time", clean_txt(severity['response']))
     pdf.ln(3)
     pdf.multi_cell(0, 6,
         f"This specimen was processed through the PlantPulse Hybrid AI + Quantum pipeline. "
@@ -1107,7 +1115,7 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
         "AUTHORIZED PERSONNEL ONLY. Generated by PlantPulse AI + Quantum v5.0 Enterprise. "
         "Recommendations must comply with US EPA, EU Regulation (EC) 1107/2009, and CODEX Alimentarius. "
         "Consult a certified agronomist before large-scale field operations. "
-        "PlantPulse Technologies Inc. © 2026. All rights reserved.")
+        "PlantPulse Technologies Inc. - 2026. All rights reserved.")
 
     return bytes(pdf.output())
 
