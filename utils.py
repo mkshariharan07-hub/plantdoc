@@ -793,6 +793,17 @@ def classify_pathogen_severity(risk_score: float, necrotic_ratio: float) -> dict
     Returns a severity class, label, color hex, and recommended response time.
     """
     combined = (risk_score * 0.6) + (necrotic_ratio * 0.4)
+    if combined < 15:
+        return {"class": "S0", "label": "Subclinical", "color": "#10b981", "response": "72 hours", "priority": "LOW"}
+    elif combined < 30:
+        return {"class": "S1", "label": "Mild", "color": "#34d399", "response": "48 hours", "priority": "LOW-MODERATE"}
+    elif combined < 50:
+        return {"class": "S2", "label": "Moderate", "color": "#f59e0b", "response": "24 hours", "priority": "MODERATE"}
+    elif combined < 70:
+        return {"class": "S3", "label": "Severe", "color": "#f97316", "response": "12 hours", "priority": "HIGH"}
+    else:
+        return {"class": "S4", "label": "Critical/Systemic", "color": "#ef4444", "response": "IMMEDIATE", "priority": "CRITICAL"}
+
 def estimate_nitrogen_content(image) -> dict:
     """
     Estimates leaf nitrogen content based on G/R ratio and 
