@@ -824,16 +824,37 @@ def estimate_nitrogen_content(image) -> dict:
         return {"nitrogen_pct": 0, "status": "Error"}
 
 def calculate_yield_impact(risk_score: float, disease_type: str) -> dict:
-    """
-    Predicts the potential impact on harvest yield based on 
-    pathogen severity and crop vitality.
-    """
+    """Predicts the potential impact on harvest yield."""
     multiplier = 1.5 if "blight" in disease_type.lower() else 1.2
     potential_loss = min(100.0, risk_score * multiplier)
     return {
         "loss_pct": round(potential_loss, 2),
         "harvest_ready": "Delayed" if potential_loss > 30 else "On Schedule"
     }
+
+def calculate_pathogen_resistance(disease_name: str) -> dict:
+    """Estimates likelihood of chemical resistance development."""
+    d = disease_name.lower()
+    score = 82 if "blight" in d else 45 if "mold" in d else 15
+    return {
+        "resistance_idx": score,
+        "warning": "HIGH (Immediate rotation required)" if score > 70 else "Low"
+    }
+
+def calculate_farm_roi(acres: float, loss_pct: float, crop_val: float = 1200) -> dict:
+    """Calculates the financial SAVINGS of treating the identified issue now."""
+    total_val = acres * crop_val
+    savings = (loss_pct / 100.0) * total_val
+    return {
+        "saved_value": round(savings, 2),
+        "total_exposed": round(total_val, 2)
+    }
+
+def estimate_biological_age(image) -> int:
+    """Estimates biological maturity age in days based on texture."""
+    score = compute_leaf_texture_score(image)
+    idx = score.get("texture_index", 0)
+    return int(min(120, max(5, idx * 1.5)))
 
 
 def estimate_crop_insurance_loss(farm_acres: float, crop_value_per_acre: float,
