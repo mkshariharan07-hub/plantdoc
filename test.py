@@ -206,8 +206,8 @@ try:
             check("Response has plant/disease/confidence",
                   all(k in d for k in ["plant", "disease", "confidence"]))
 
-    except Exception as e:
-        check("Flask API tests", False, str(e))
+except Exception as e:
+    check("Flask API tests", False, str(e))
 
 # ── Test 9: PlantNet API ────────────────────────────────────────────────────
 print("\n[9] External API Stubs")
