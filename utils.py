@@ -850,6 +850,12 @@ def predict_harvest_revenue(acres: float, percentile: float, base_val: float = 1
     efficiency = percentile / 100.0
     return round(acres * base_val * efficiency, 2)
 
+def calculate_degrade_velocity(risk_score: float) -> str:
+    """Estimates the velocity of pathogen spread."""
+    if risk_score > 70: return "ACCELERATED (4.2%/day)"
+    if risk_score > 40: return "MODERATE (1.5%/day)"
+    return "STAGNANT"
+
 def calculate_treatment_efficacy(severity_score: float, res_idx: float) -> float:
     """Predicts chance of success for the recommended chemical treatment."""
     base = 100.0 - severity_score
