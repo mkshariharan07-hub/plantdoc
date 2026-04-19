@@ -19,7 +19,7 @@ from utils import (
     predict_image, load_model_and_scaler, build_quantum_circuit,
     run_quantum, calculate_quantum_risk, generate_pdf_report,
     simulate_environment, get_perenual_care_info, generate_pathogen_mask,
-    decode_bytes_to_bgr
+    decode_bytes_to_bgr, compute_leaf_texture_score
 )
 
 load_dotenv()
@@ -28,18 +28,18 @@ load_dotenv()
 # PAGE CONFIGURATION
 # ===============================
 st.set_page_config(
-    page_title="PlantPulse AI | Quantum Diagnostics",
+    page_title="PlantPulse Pro | Enterprise Ag-Tech",
     page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ===============================
-# STYLE OVERRIDES (The Groot Theme)
+# STYLE OVERRIDES (Ultimate Groot UI)
 # ===============================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=JetBrains+Mono&display=swap');
 
     html, body, [class*="css"] { font-family: 'Nunito', sans-serif !important; }
 
@@ -50,81 +50,67 @@ st.markdown("""
             linear-gradient(180deg, #1f361c 0%, #171d15 100%) !important;
     }
 
-    /* PREMIUM CARD UI */
-    .diagnosis-card {
-        background: rgba(46, 31, 23, 0.85) !important;
-        border: 2px solid #5d4037 !important;
-        border-radius: 24px !important;
-        padding: 30px;
-        margin-bottom: 25px;
-        box-shadow: 0 12px 24px rgba(0,0,0,0.4) !important;
-        backdrop-filter: blur(8px);
+    /* GLASSMORPHISM UI */
+    .glass-panel {
+        background: rgba(46, 31, 23, 0.7) !important;
+        border: 1px solid rgba(180, 223, 65, 0.2) !important;
+        border-radius: 20px !important;
+        padding: 25px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
 
-    .status-alert {
-        padding: 15px 25px;
+    /* PREMIUM METRICS */
+    .metric-card {
+        background: rgba(0, 0, 0, 0.4);
+        border-left: 5px solid #b4df41;
         border-radius: 12px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        text-align: center;
-        margin: 15px 0;
+        padding: 15px;
+        margin: 10px 0;
     }
-    .status-healthy { background: rgba(16, 185, 129, 0.2); border: 2px solid #10b981; color: #10b981; }
-    .status-infected { background: rgba(239, 68, 68, 0.2); border: 2px solid #ef4444; color: #ef4444; }
+    .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 2rem; color: #b4df41; weight: 900; }
+    .metric-label { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
 
-    .metric-box {
-        text-align: center;
-        padding: 20px;
-        background: rgba(0,0,0,0.3);
-        border: 1px solid #5d4037;
-        border-radius: 15px;
+    /* STATUS COMPONENTS */
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-top: 8px;
     }
-    .metric-box h2 { font-size: 2.8rem !important; margin: 0; color: #b4df41; }
-    .metric-box p { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; margin: 0; }
+    .badge-high { background: #ef4444; color: white; }
+    .badge-mid { background: #f59e0b; color: white; }
+    .badge-safe { background: #10b981; color: white; }
 
     /* BUTTONS */
     .stButton>button {
         background: linear-gradient(135deg, #8bc34a, #689f38) !important;
         color: #111 !important;
         border: 2px solid #aed581 !important;
-        border-radius: 50px !important;
+        border-radius: 12px !important;
         font-weight: 900 !important;
-        padding: 10px 30px !important;
         text-transform: uppercase;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        width: 100%;
+        transition: all 0.3s ease !important;
     }
     .stButton>button:hover {
-        transform: scale(1.05) translateY(-3px) !important;
-        box-shadow: 0 10px 20px rgba(104, 159, 56, 0.6) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(104, 159, 56, 0.4) !important;
     }
 
-    /* GROOT ANIMATIONS */
-    @keyframes grootBounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
+    /* ANIMATIONS */
+    @keyframes pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(180, 223, 65, 0.4); }
+        70% { box-shadow: 0 0 0 15px rgba(180, 223, 65, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(180, 223, 65, 0); }
     }
-    .groot-img {
-        animation: grootBounce 3s ease-in-out infinite;
-        border-radius: 20px;
-        border: 4px solid #5d4037;
-    }
-
-    @keyframes leafFall {
-        0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
-        10% { opacity: 1; }
-        100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-    }
-    .magical-leaf {
-        position: fixed; top: -5%; z-index: 999; pointer-events: none;
-        animation: leafFall 15s linear infinite;
+    .scanning-active {
+        animation: pulse-green 2s infinite;
     }
 </style>
-
-<div class="magical-leaf" style="left: 10%;">🌿</div>
-<div class="magical-leaf" style="left: 30%; animation-delay: 4s;">🍂</div>
-<div class="magical-leaf" style="left: 60%; animation-delay: 2s;">🍃</div>
-<div class="magical-leaf" style="left: 85%; animation-delay: 7s;">🌱</div>
 """, unsafe_allow_html=True)
 
 # ===============================
@@ -136,191 +122,229 @@ def load_assets():
 
 model, scaler = load_assets()
 
-def decode_image(source):
-    if source is None: return None
+def decode_image_enhanced(file):
+    if file is None: return None
     try:
-        return decode_bytes_to_bgr(source.getvalue())
+        arr = np.asarray(bytearray(file.read()), dtype=np.uint8)
+        return cv2.imdecode(arr, cv2.IMREAD_COLOR)
     except: return None
 
 # ===============================
-# SIDEBAR
+# SIDEBAR — CONTROL CENTER
 # ===============================
 with st.sidebar:
-    st.markdown("<img src='https://media1.tenor.com/m/Zf2qA9tOQ3QAAAAd/baby-groot.gif' class='groot-img' width='100%'>", unsafe_allow_html=True)
-    st.title("I AM GROOT")
-    st.caption("Botanical AI v5.0 // Quantum Pipeline")
-    st.markdown("---")
-    
-    st.subheader("👨‍💻 Project Team")
-    st.info("**Sindhuja R** (226004099)\n\n**Saraswathy R** (226004092)\n\n**U. Kiruthika** (226004052)")
+    st.markdown("<img src='https://media1.tenor.com/m/Zf2qA9tOQ3QAAAAd/baby-groot.gif' style='border-radius:15px; border:2px solid #b4df41; width:100%'>", unsafe_allow_html=True)
+    st.title("PlantPulse Pro")
+    st.caption("v5.1 Enterprise Suite // Global Ag-Monitoring")
     
     st.markdown("---")
-    st.markdown("### 📊 System Status")
-    st.success("Quantum Core: ONLINE")
-    st.success("PlantNet API: LINKED")
-    st.success("CropHealth: ACTIVE")
+    st.subheader("📡 IoT Link Status")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("Node A: ✅")
+        st.write("Node B: ✅")
+    with col2:
+        st.write("Drone 1: 🛸")
+        st.write("Orbit: 🛰️")
+        
+    st.markdown("---")
+    st.subheader("🧪 Live Lab Mode")
+    lab_mode = st.toggle("Enable Advanced CV Metrics", value=True)
+    quantum_boost = st.toggle("Quantum Depth Enhancement", value=True)
+    
+    st.markdown("---")
+    with st.expander("👤 Contact Support"):
+        st.write("**Sindhuja R**\nReg No: 226004099")
+        st.write("**Saraswathy R**\nReg No: 226004092")
+        st.write("**U. Kiruthika**\nReg No: 226004052")
 
 # ===============================
-# MAIN UI
+# MAIN UI — DASHBOARD
 # ===============================
+# Header with Ticker
 st.markdown("""
-<div style='text-align: center; padding: 20px 0;'>
-    <h1 style='color: #b4df41; font-size: 4rem; margin-bottom: 0;'>PlantPulse</h1>
-    <p style='color: #94a3b8; font-size: 1.2rem;'>Hybrid AI + Quantum Expert Diagnostic System</p>
+<div style="background: #020617; padding: 10px; margin-bottom: 20px; border: 1px solid #1e293b; border-radius: 8px;">
+    <marquee scrollamount="5" style="color: #34d399; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">
+        [GLOBAL TICKER] &nbsp;&nbsp; 🌽 CORN: $4.50 (▲ 0.8%) &nbsp;&nbsp;█&nbsp;&nbsp; 🌱 SOY: $12.44 (▼ 0.2%) &nbsp;&nbsp;█&nbsp;&nbsp; 🌾 WHEAT: $6.12 (▼ 0.4%) &nbsp;&nbsp;█&nbsp;&nbsp; 🛰️ ORBITAL TELEMETRY: NOMINAL &nbsp;&nbsp;█&nbsp;&nbsp; ⚛️ QUANTUM SYNC: ACTIVE &nbsp;&nbsp;
+    </marquee>
 </div>
 """, unsafe_allow_html=True)
 
-# SPECIMEN INPUT
-col_input, col_display = st.columns([1, 1], gap="large")
+# INGESTION LAYER
+st.markdown("## 📥 Specimen Ingestion Layer")
+tab_ingest, tab_batch = st.tabs(["🎯 Precision Ingestion", "📦 Batch Processing (New)"])
 
-with col_input:
-    st.markdown("### 📥 Specimen Ingestion")
-    source_tab = st.radio("Choose Input Mode:", ["📁 File Upload", "📷 Live Camera"], horizontal=True)
-    
-    specimen = None
-    if source_tab == "📁 File Upload":
-        uploaded = st.file_uploader("Drop leaf specimen here", type=["jpg", "png", "jpeg"])
-        if uploaded: specimen = decode_image(uploaded)
-    else:
-        captured = st.camera_input("Scan specimen directly")
-        if captured: specimen = decode_image(captured)
+specimens = []
 
-with col_display:
-    if specimen is not None:
-        st.markdown("### 🍃 Specimen Preview")
-        st.image(cv2.cvtColor(specimen, cv2.COLOR_BGR2RGB), use_container_width=True, caption="Active Specimen for Analysis")
-    else:
-        st.markdown("""
-        <div style='height: 300px; display: flex; align-items: center; justify-content: center; border: 2px dashed #5d4037; border-radius: 20px;'>
-            <p style='color: #475569;'>Awaiting specimen for terminal analysis...</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-# ANALYSIS TRIGGER
-if specimen is not None:
-    st.markdown("---")
-    if st.button("🚀 INITIATE SCAN & QUANTUM ANALYSIS", use_container_width=True, type="primary"):
-        
-        # 1. SCANNING ENGINE
-        with st.status("📡 Initializing Botanical Frequency Scan...", expanded=True) as status:
-            
-            # --- STEP 1: PLANT IDENTIFICATION ---
-            st.write("🔍 Identifying plant variant via PlantNet matrix...")
-            p_res = identify_plant_plantnet(specimen)
-            variant = p_res.get('plant', 'Unknown')
-            scientific = p_res.get('scientific_name', 'N/A')
-            
-            # --- STEP 2: DISEASE STATUS ---
-            st.write("🧬 Analyzing cellular integrity via Crop.Health...")
-            c_res = identify_crop_health(specimen)
-            disease_name = c_res.get('disease', 'Healthy')
-            d_conf = c_res.get('confidence', 0.0)
-            is_diseased = "healthy" not in disease_name.lower()
-            
-            # Update Status
-            status.update(label=f"Scan Complete: {variant} detected.", state="complete")
-
-        # --- RESULTS PRESENTATION ---
-        st.markdown(f"<div class='diagnosis-card'>", unsafe_allow_html=True)
-        
-        # Heading: Plant Name
-        st.markdown(f"<h2 style='color: #b4df41; text-align: center;'>IDENTIFIED: {variant}</h2>", unsafe_allow_html=True)
-        st.markdown(f"<p style='text-align: center; color: #94a3b8; font-style: italic;'>Species: {scientific}</p>", unsafe_allow_html=True)
-        
-        # Disease Status Banner
-        if is_diseased:
-            st.markdown(f"<div class='status-alert status-infected'>🦠 PATHOGEN DETECTED: {disease_name.upper()}</div>", unsafe_allow_html=True)
+with tab_ingest:
+    ingest_c1, ingest_c2 = st.columns([1, 1])
+    with ingest_c1:
+        input_mode = st.segmented_control("Input Source", ["Upload", "Camera"], selection_mode="single", default="Upload")
+        if input_mode == "Upload":
+            single_file = st.file_uploader("Upload leaf specimen", type=["jpg","png","jpeg"], label_visibility="collapsed")
+            if single_file: specimens.append(decode_image_enhanced(single_file))
         else:
-            st.markdown(f"<div class='status-alert status-healthy'>✨ STATE: HEALTHY SPECIMEN</div>", unsafe_allow_html=True)
+            cam_file = st.camera_input("Capture live specimen", label_visibility="collapsed")
+            if cam_file: specimens.append(decode_image_enhanced(cam_file))
+    with ingest_c2:
+        if specimens:
+            st.image(cv2.cvtColor(specimens[0], cv2.COLOR_BGR2RGB), use_container_width=True, caption="Active Precision Specimen")
+        else:
+            st.info("Awaiting specimen ingestion for terminal mapping.")
 
-        if is_diseased:
-            # --- QUANTUM ANALYSIS ---
-            with st.spinner("⚛️ Running Quantum Entropy Analysis (Qiskit)..."):
-                qc, entropy = build_quantum_circuit(specimen)
-                q_res, backend_name = run_quantum(qc)
-                risk_score, risk_level = calculate_quantum_risk(q_res, entropy)
+with tab_batch:
+    batch_files = st.file_uploader("Upload multiple specimens for batch analysis", type=["jpg","png","jpeg"], accept_multiple_files=True)
+    if batch_files:
+        st.success(f"{len(batch_files)} specimens added to queue.")
+        for f in batch_files: specimens.append(decode_image_enhanced(f))
+
+# ANALYSIS ENGINE
+if specimens:
+    st.markdown("---")
+    st.markdown("## ⚙️ Hybrid Expert Pipeline")
+    
+    if st.button("🚀 EXECUTE FULL ANALYTICAL SEQUENCE", use_container_width=True):
+        
+        for idx, img in enumerate(specimens):
+            if img is None: continue
             
-            st.markdown("### ⚛️ Quantum Risk Intelligence")
-            q_col1, q_col2, q_col3 = st.columns(3)
-            with q_col1:
-                st.markdown("<div class='metric-box'><p>Risk Level</p><h2 style='color: #ef4444;'>"+risk_level+"</h2></div>", unsafe_allow_html=True)
-            with q_col2:
-                st.markdown("<div class='metric-box'><p>Entropy Core</p><h2>"+str(risk_score)+"%</h2></div>", unsafe_allow_html=True)
-            with q_col3:
-                st.markdown("<div class='metric-box'><p>Backend</p><h4 style='color: #34d399;'>"+backend_name+"</h4></div>", unsafe_allow_html=True)
-            
-            # --- REMEDIES & INFO ---
-            st.markdown("---")
-            st.markdown("### 💊 Expert Remediation Protocol")
-            treatment = c_res.get('treatment', "Consult an agricultural expert for specific treatment.")
-            st.success(f"**Primary Action:** {treatment}")
-            
-            # Additional Info
-            care_data = get_perenual_care_info(variant)
-            
-            info_tab1, info_tab2 = st.tabs(["📋 Detailed Report", "🔍 Biological Metrics"])
-            with info_tab1:
-                st.markdown("**Pathogen Profile:** " + disease_name)
-                st.markdown("**Survival Forecast:** 30-Day risk projection indicates " + ("HIGH" if risk_score > 50 else "MODERATE") + " volatility.")
-                if care_data and "error" not in care_data:
-                    st.write("---")
-                    st.write("**Botanical Care Requirements:**")
-                    st.write(f"- Watering: {care_data.get('watering', 'Regular')}")
-                    st.write(f"- Sunlight: {', '.join(care_data.get('sunlight', ['Full Sun']))}")
-            
-            with info_tab2:
-                # Textures for report
-                gray = cv2.cvtColor(specimen, cv2.COLOR_BGR2GRAY)
-                std_dev = np.std(gray)
-                texture_data = {
-                    "texture_index": round(std_dev / 25.5, 2),
-                    "classification": "Granular" if std_dev > 40 else "Smooth",
-                    "edge_density": round(float(np.sum(cv2.Canny(gray, 50, 150) > 0)) / gray.size * 100, 2)
-                }
-                st.write(f"- Texture Index: {texture_data['texture_index']} ({texture_data['classification']})")
-                st.write(f"- Cell Edge Density: {texture_data['edge_density']}%")
+            with st.status(f"🛠️ Processing Specimen {idx+1}/{len(specimens)}...", expanded=True) as status:
                 
-            # --- FINAL REPORT DOWNLOAD ---
+                # --- PIEPLINE EXECUTION ---
+                p_res = identify_plant_plantnet(img)
+                c_res = identify_crop_health(img)
+                variant = p_res.get('plant', 'Unknown')
+                disease = c_res.get('disease', 'Healthy')
+                is_diseased = "healthy" not in disease.lower()
+                
+                status.write(f"✅ Ident Mapping: **{variant}**")
+                status.write(f"✅ Pathogen Scan: **{disease}**")
+                
+                # QUANTUM
+                qc, entropy = build_quantum_circuit(img)
+                q_res, backend = run_quantum(qc)
+                score, level = calculate_quantum_risk(q_res, entropy)
+                status.write(f"✅ Quantum Consensus: **{level}**")
+                
+                status.update(label=f"Specimen {idx+1} Fully Analyzed", state="complete")
+
+            # --- PRESENTATION LAYER ---
+            st.markdown(f"### 📋 Analysis Report: {variant}")
+            
+            res_c1, res_c2 = st.columns([2, 3])
+            
+            # Left: Main Metrics
+            with res_c1:
+                st.markdown("<div class='glass-panel'>", unsafe_allow_html=True)
+                st.markdown(f"**State:** {'🔴 INFECTED' if is_diseased else '🟢 HEALTHY'}")
+                st.markdown(f"**Pathogen:** {disease}")
+                
+                # Metric Cards
+                m1, m2 = st.columns(2)
+                with m1:
+                    st.markdown(f"<div class='metric-card'><span class='metric-label'>AI Conf</span><div class='metric-value'>{c_res.get('confidence', 0)}%</div></div>", unsafe_allow_html=True)
+                with m2:
+                    st.markdown(f"<div class='metric-card'><span class='metric-label'>Q-Risk</span><div class='metric-value' style='color:#ef4444'>{score}%</div></div>", unsafe_allow_html=True)
+                
+                st.markdown(f"**Remediation:** {c_res.get('treatment', 'N/A')}")
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            # Right: Advanced Features
+            with res_c2:
+                feat_tabs = st.tabs(["⚛️ Quantum Report", "🌡️ IoT Sensors", "🗺️ Threat Radar", "🌀 3D Topology"])
+                
+                with feat_tabs[0]:
+                    st.markdown("#### Quantum Entropy Matrix")
+                    st.write(f"Executed on: `{backend}`")
+                    st.caption("Subatomic breakdown of tissue stability. High entropy suggests cellular necrosis spread.")
+                    # Quantum Chart
+                    fig_q = go.Figure(go.Indicator(
+                        mode = "gauge+number", value = score,
+                        title = {'text': "Entropy Deviation"},
+                        gauge = {'axis': {'range': [None, 100]}, 'bar': {'color': "#ef4444"}}
+                    ))
+                    fig_q.update_layout(height=250, margin=dict(l=20,r=20,t=40,b=20), paper_bgcolor="rgba(0,0,0,0)", font={'color': "white"})
+                    st.plotly_chart(fig_q, use_container_width=True)
+
+                with feat_tabs[1]:
+                    st.markdown("#### Simulated IoT Sensor Mesh")
+                    st.caption("Simulating real-time data from Node Alpha-7 (Field Proximity).")
+                    env = simulate_environment()
+                    col_env1, col_env2 = st.columns(2)
+                    col_env1.metric("Ambient Temp", f"{env['temp']}°C", "+1.2%")
+                    col_env1.metric("UV Index", f"{env['uv_index']} U", "-0.1")
+                    col_env2.metric("Soil Humidity", f"{env['humidity']}%", "-4.5%")
+                    col_env2.metric("Capillary H2O", f"{env['soil_moisture']}%", "+0.8%")
+
+                with feat_tabs[2]:
+                    st.markdown("#### Regional Outbreak Radar")
+                    st.caption("Synthetic satellite telemetry mapping nearby pathogen clusters.")
+                    map_data = pd.DataFrame(np.random.randn(50, 2) / [20, 20] + [37.77, -122.42], columns=['lat', 'lon'])
+                    st.pydeck_chart(pdk.Deck(
+                        map_style='mapbox://styles/mapbox/dark-v11',
+                        initial_view_state=pdk.ViewState(latitude=37.77, longitude=-122.42, zoom=10, pitch=45),
+                        layers=[pdk.Layer('HexagonLayer', data=map_data, get_position='[lon, lat]', radius=200, extruded=True, pickable=True, elevation_scale=4, elevation_range=[0, 1000])]
+                    ))
+
+                with feat_tabs[3]:
+                    st.markdown("#### 3D Tissue Surface Topography")
+                    st.caption("Interactive 3D reconstruction based on grayscale luminosity mapping (Z-Axis = Tissue Density).")
+                    img_small = cv2.resize(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), (100, 100))
+                    fig_3d = go.Figure(data=[go.Surface(z=img_small, colorscale='Viridis')])
+                    fig_3d.update_layout(scene=dict(xaxis=dict(visible=False), yaxis=dict(visible=False), zaxis=dict(visible=False)), height=350, margin=dict(l=0,r=0,t=0,b=0), paper_bgcolor="rgba(0,0,0,0)")
+                    st.plotly_chart(fig_3d, use_container_width=True)
+
+            # Download Option
             st.markdown("---")
-            leaf_health = max(0, 100 - risk_score)
-            mask = generate_pathogen_mask(specimen)
-            necrotic_ratio = round(float(np.sum(mask > 0)) / mask.size * 100, 2)
+            mask = generate_pathogen_mask(img)
+            n_ratio = round(float(np.sum(mask > 0)) / mask.size * 100, 2)
+            texture = compute_leaf_texture_score(img)
+            care = get_perenual_care_info(variant)
             
             pdf_bytes = generate_pdf_report(
-                variant, disease_name, d_conf, risk_level, treatment, 
-                risk_score, leaf_health, care_data, necrotic_ratio, texture_data
+                variant, disease, c_res.get('confidence',0), level, 
+                c_res.get('treatment',''), score, max(0, 100-score), care, n_ratio, texture
             )
-            
-            st.download_button(
-                label="📥 DOWNLOAD QUANTUM CLINICAL DOSSIER",
-                data=pdf_bytes,
-                file_name=f"PlantPulse_Report_{variant}_{datetime.date.today()}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-            
-        else:
-            # Healthy specimen additional info
-            st.markdown("### ✨ Health Report")
-            st.write(f"The {variant} specimen shows optimal cellular structure. No pathogens detected within the current matrix depth.")
-            st.info("💡 **Maintenance Tip:** Continue standard watering and nutrient regimes. Monitor for local environmental changes.")
-            
-            care_data = get_perenual_care_info(variant)
-            if care_data and "error" not in care_data:
-                with st.expander("🌿 View Optimal Care Guide for Healthy Growth"):
-                    st.write(f"**Preferred Cycle:** {care_data.get('cycle', 'Perennial')}")
-                    st.write(f"**Watering Needs:** {care_data.get('watering', 'Standard')}")
+            st.download_button(f"📥 Download Clinical Dossier for {variant}", data=pdf_bytes, file_name=f"PlantPulse_Report_{variant}.pdf", mime="application/pdf")
+            st.markdown("<br>", unsafe_allow_html=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+# METEOROLOGICAL THREAT CALCULATOR (Global Feature)
+st.markdown("---")
+st.markdown("## 🌦️ Meteorological Impact Forecast")
+st.caption("Adjust environmental parameters to predict disease transmission velocity.")
+met_c1, met_c2 = st.columns([2, 1])
+with met_c1:
+    m_temp = st.slider("Ambient Temperature (°C)", 10, 45, 24)
+    m_hum = st.slider("Relative Humidity (%)", 0, 100, 65)
+    
+    # Simple risk model
+    spread_risk = "Low"
+    s_color = "#10b981"
+    if m_hum > 80 and m_temp > 25:
+        spread_risk, s_color = "Critical", "#ef4444"
+    elif m_hum > 60:
+        spread_risk, s_color = "Elevated", "#f59e0b"
+        
+    st.markdown(f"""
+    <div style='background: {s_color}22; border: 2px solid {s_color}; border-radius: 15px; padding: 20px; text-align: center;'>
+        <h3 style='color: {s_color}; margin: 0;'>{spread_risk} TRANSMISSION RISK</h3>
+        <p style='color: #94a3b8; font-family: monospace; font-size: 0.9rem;'>Atmospheric suitability index for fungal spore germination.</p>
+    </div>
+    """, unsafe_allow_html=True)
+with met_c2:
+    st.markdown("#### 🤖 Ask Dr. Leaf (Expert System)")
+    user_q = st.text_input("Query the botanical database...", placeholder="How do I cure Leaf Mold?")
+    if user_q:
+        # Simple local search logic
+        d_info = get_disease_info(user_q)
+        st.success(f"**Dr. Leaf Says:** \n\n {d_info['tips']}")
 
-# Footer
+# FOOTER
 st.markdown("<br><br><br>", unsafe_allow_html=True)
 st.markdown("""
-<div style='text-align: center; padding: 20px; border-top: 1px solid rgba(180, 223, 65, 0.2);'>
-    <p style='color: #475569; font-size: 0.8rem; font-family: monospace;'>
-        PLANT PULSE TECHNOLOGIES © 2026<br>
-        v5.0 Enterprise Hybrid Quantum-Classical Engine<br>
-        Sindhuja · Saraswathy · Kiruthika
-    </p>
+<div style='text-align: center; color: #475569; font-size: 0.8rem; border-top: 1px solid rgba(180, 223, 65, 0.1); padding-top: 20px;'>
+    PLANT PULSE TECHNOLOGIES INC. — ENTERPRISE EDITION<br>
+    Built with Python, Streamlit, Qiskit & OpenCV<br>
+    © 2026 Global Agricultural Intelligence Network
 </div>
 """, unsafe_allow_html=True)

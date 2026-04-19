@@ -861,7 +861,8 @@ def compute_treatment_roi(risk_score: float, farm_acres: float = 50,
 
 def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level: str,
                          treatment: str, risk_score: float = 0.0, leaf_health: float = 100.0,
-                         care_data: dict = None, necrotic_ratio: float = 0.0) -> bytes:
+                         care_data: dict = None, necrotic_ratio: float = 0.0,
+                         texture_data: dict = None) -> bytes:
     """
     Generate a full 8-section enterprise-grade PDF Clinical Dossier.
     Sections: Executive Summary, Physical CV Metrics, Quantum Matrix,
@@ -982,6 +983,9 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
     kv_row("Quantum Vitality Index", f"{leaf_health}%")
     kv_row("Quantum Risk Score", f"{risk_score}%")
     kv_row("Risk Classification", risk_level)
+    if texture_data:
+        kv_row("Texture Index", f"{texture_data.get('texture_index', 0):.2f} ({texture_data.get('classification', 'N/A')})")
+        kv_row("Edge Density", f"{texture_data.get('edge_density', 0):.2f}%")
     pdf.ln(3)
     pdf.multi_cell(0, 6,
         f"The OpenCV pipeline converted the specimen to HSV colour space, isolated the foreground "
@@ -1106,17 +1110,6 @@ def generate_pdf_report(plant: str, disease: str, confidence: float, risk_level:
         "PlantPulse Technologies Inc. © 2026. All rights reserved.")
 
     return bytes(pdf.output())
-
-
-def simulate_environment() -> dict:
-    """Mock environmental sensor data based on random stability."""
-    import random
-    return {
-        "temp": round(random.uniform(22, 34), 1),
-        "humidity": round(random.uniform(40, 95), 1),
-        "soil_moisture": round(random.uniform(10, 80), 1),
-        "uv_index": round(random.uniform(1, 11), 1)
-    }
 
 
 def simulate_environment() -> dict:
