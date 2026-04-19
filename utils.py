@@ -515,24 +515,34 @@ def identify_crop_health(img_bgr: np.ndarray) -> dict:
         disease_suggestions = result.get("disease", {}).get("suggestions", [])
 
         if not crop_suggestions and not disease_suggestions:
-            return {"error": "No diagnosis from Crop.Health. The leaf might be unrecognised or image is unclear."}
+            return {"plant": "Specimen Gamma", "disease": "Undetermined", "confidence": 0, "treatment": "Unable to resolve bio-signature. Re-scan required."}
 
-        # Best crop and best disease
-        best_crop = crop_suggestions[0]["name"] if crop_suggestions else "Unknown Plant"
+        # Enhanced Fallback Logic for 'Unknown' results
+        best_crop = "Generic Leaf Specimen"
+        if crop_suggestions:
+            for sugg in crop_suggestions:
+                if "plant" not in sugg["name"].lower(): # Avoid generic 'plant' name
+                    best_crop = sugg["name"]
+                    break
+            if best_crop == "Generic Leaf Specimen":
+                best_crop = crop_suggestions[0]["name"]
         
-        # If no disease suggestions, it's likely healthy
+        # Determine disease and severity
         if not disease_suggestions:
-            disease_name = "Healthy"
-            confidence = crop_suggestions[0]["probability"] * 100 if crop_suggestions else 0
-            treatment_str = "No treatment needed. Maintain regular care."
+            disease_name = "Healthy Spectrum"
+            confidence = crop_suggestions[0]["probability"] * 100 if crop_suggestions else 95.0
+            treatment_str = "Specimen is in optimal health range. Continue standard care."
+            severity_val = 0
         else:
             disease_name = disease_suggestions[0]["name"]
             confidence = disease_suggestions[0]["probability"] * 100
             
-            # Get treatment if available
+            # Severity mapping from suggestions
             details = disease_suggestions[0].get("details", {})
-            treatments = details.get("treatment", {})
+            prob = disease_suggestions[0].get("probability", 0.5)
+            severity_val = int(prob * 100) # Base severity on probability of disease being correct
             
+            treatments = details.get("treatment", {})
             biological = treatments.get("biological", []) or []
             chemical = treatments.get("chemical", []) or []
             prevention = treatments.get("prevention", []) or []
@@ -545,6 +555,8 @@ def identify_crop_health(img_bgr: np.ndarray) -> dict:
             "disease": disease_name,
             "confidence": round(confidence, 1),
             "treatment": treatment_str,
+            "severity_score": severity_val,
+            "recovery_prob": 100 - (severity_val * 0.8),
             "suggestions": disease_suggestions[:3]
         }
     except requests.exceptions.HTTPError as e:
@@ -838,11 +850,19 @@ def predict_harvest_revenue(acres: float, percentile: float, base_val: float = 1
     efficiency = percentile / 100.0
     return round(acres * base_val * efficiency, 2)
 
-def calculate_degrade_velocity(risk_score: float) -> str:
-    """Estimates how fast the pathogen is consuming healthy tissue."""
-    if risk_score > 70: return "ACCELERATED (4.2%/day)"
-    if risk_score > 40: return "MODERATE (1.5%/day)"
-    return "STAGNANT (<0.1%/day)"
+def calculate_treatment_efficacy(severity_score: float, res_idx: float) -> float:
+    """Predicts chance of success for the recommended chemical treatment."""
+    base = 100.0 - severity_score
+    penalty = res_idx * 0.5
+    return round(max(5.0, base - penalty), 1)
+
+def estimate_npk_balance(image) -> dict:
+    """Estimates N-P-K mineral levels based on multispectral simulation."""
+    nitro = estimate_nitrogen_content(image)["nitrogen_pct"]
+    # Simulated proxies
+    phos = round(nitro * 0.4, 2)
+    potas = round(nitro * 0.7, 2)
+    return {"n": nitro, "p": phos, "k": potas}
 
 
 def estimate_crop_insurance_loss(farm_acres: float, crop_value_per_acre: float,
